@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  PhoneCall,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -43,6 +44,7 @@ const navItems = [
   { href: "/admin/content",      label: "Content",       icon: FileText },
   { href: "/admin/testimonials", label: "Testimonials",  icon: Quote },
   { href: "/admin/contact-form", label: "Contact Form",  icon: FormInput },
+  { href: "/admin/contact-info", label: "Contact Info",  icon: PhoneCall },
   { href: "/admin/branding",     label: "Branding",      icon: ImageIcon },
   { href: "/admin/seo-geo",      label: "SEO & GEO",     icon: Globe2 },
   { href: "/admin/colors",       label: "Colors",        icon: Palette },

@@ -18,6 +18,7 @@ const ALL_SECTIONS = [
   { id: "/admin/content", label: "Content" },
   { id: "/admin/testimonials", label: "Testimonials" },
   { id: "/admin/contact-form", label: "Contact Form" },
+  { id: "/admin/contact-info", label: "Contact Info" },
   { id: "/admin/branding", label: "Branding" },
   { id: "/admin/seo-geo", label: "SEO & GEO" },
   { id: "/admin/colors", label: "Colors" },

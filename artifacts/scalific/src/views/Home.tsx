@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Service, TeamMember, ContentBlock, ContactFormField, SiteSetting, Testimonial } from "@/lib/types";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Mail, MapPin, Menu, Phone, Quote, Rocket, Search, Target, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Mail, MapPin, Menu, MessageCircle, Phone, Quote, Rocket, Search, Target, X } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -195,6 +195,8 @@ export default function Home() {
   const contactEmail     = getBlockContent(contentBlocks, "contact_email", "hello@scalific.in");
   const contactPhone     = getBlockContent(contentBlocks, "contact_phone", "+91 98765 43210");
   const contactLocation  = getBlockContent(contentBlocks, "contact_location", "Remote-first, serving clients worldwide.");
+  const whatsappNumber   = getBlockContent(contentBlocks, "whatsapp_number", contactPhone);
+  const whatsappMessage  = getBlockContent(contentBlocks, "whatsapp_message", "Hello Scalific team, I would like to inquire about your services!");
   const contactFormCopy = {
     missing: getBlockContent(contentBlocks, "contact_form_missing_message", "Form configuration is missing."),
     sending: getBlockContent(contentBlocks, "contact_form_sending_label", "Sending..."),
@@ -881,6 +883,17 @@ export default function Home() {
                       <Phone className="w-4 h-4 text-primary" />
                       <span>{contactPhone}</span>
                     </div>
+                    {whatsappNumber && (
+                      <a
+                        href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-500" />
+                        <span>WhatsApp: {whatsappNumber}</span>
+                      </a>
+                    )}
                     <div className="flex items-center gap-3">
                       <MapPin className="w-4 h-4 text-primary" />
                       <span>{contactLocation}</span>
@@ -941,6 +954,24 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Quick Chat Button */}
+      {whatsappNumber && (
+        <a
+          href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Chat with us on WhatsApp"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold text-sm rounded-full shadow-2xl transition-all duration-300 hover:scale-105 group border border-white/20 active:scale-95"
+        >
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+          </span>
+          <MessageCircle className="w-5 h-5 fill-current" />
+          <span className="hidden sm:inline">Chat on WhatsApp</span>
+        </a>
+      )}
     </div>
   );
 }
