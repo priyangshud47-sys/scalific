@@ -196,7 +196,11 @@ export default function Home() {
   const contactPhone     = getBlockContent(contentBlocks, "contact_phone", "+91 98765 43210");
   const contactLocation  = getBlockContent(contentBlocks, "contact_location", "Remote-first, serving clients worldwide.");
   const whatsappNumber   = getBlockContent(contentBlocks, "whatsapp_number", contactPhone);
-  const whatsappMessage  = getBlockContent(contentBlocks, "whatsapp_message", "Hello Scalific team, I would like to inquire about your services!");
+  const whatsappMessage  = getBlockContent(contentBlocks, "whatsapp_message", "");
+  const whatsappCleanNum = whatsappNumber.replace(/[^\d]/g, "");
+  const whatsappHref     = whatsappMessage?.trim()
+    ? `https://wa.me/${whatsappCleanNum}?text=${encodeURIComponent(whatsappMessage.trim())}`
+    : `https://wa.me/${whatsappCleanNum}`;
   const contactFormCopy = {
     missing: getBlockContent(contentBlocks, "contact_form_missing_message", "Form configuration is missing."),
     sending: getBlockContent(contentBlocks, "contact_form_sending_label", "Sending..."),
@@ -885,7 +889,7 @@ export default function Home() {
                     </div>
                     {whatsappNumber && (
                       <a
-                        href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+                        href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
@@ -958,7 +962,7 @@ export default function Home() {
       {/* Floating WhatsApp Quick Chat Button */}
       {whatsappNumber && (
         <a
-          href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+          href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
           title="Chat with us on WhatsApp"

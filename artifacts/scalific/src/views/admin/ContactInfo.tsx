@@ -83,7 +83,9 @@ export default function AdminContactInfo() {
   };
 
   const cleanWhatsappNum = form.whatsapp_number.replace(/[^\d]/g, "");
-  const whatsappPreviewUrl = `https://wa.me/${cleanWhatsappNum}?text=${encodeURIComponent(form.whatsapp_message)}`;
+  const whatsappPreviewUrl = form.whatsapp_message?.trim()
+    ? `https://wa.me/${cleanWhatsappNum}?text=${encodeURIComponent(form.whatsapp_message.trim())}`
+    : `https://wa.me/${cleanWhatsappNum}`;
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -220,9 +222,8 @@ export default function AdminContactInfo() {
               <Textarea
                 value={form.whatsapp_message}
                 onChange={(e) => setForm({ ...form, whatsapp_message: e.target.value })}
-                placeholder="e.g. Hello Scalific team, I would like to inquire about your services!"
-                rows={3}
-                required
+                placeholder="Optional prefilled message (leave empty for a clean chat)"
+                rows={2}
                 className="bg-background/50"
               />
               <p className="text-[11px] text-muted-foreground">
