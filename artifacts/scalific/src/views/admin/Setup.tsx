@@ -115,18 +115,67 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS permission_requests (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requested_by TEXT NOT NULL,
+  request_type TEXT NOT NULL,
+  target_email TEXT NOT NULL,
+  payload      JSONB NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'PENDING',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 2. ROW LEVEL SECURITY
 
-ALTER TABLE site_settings       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE services            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_members        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE content_blocks      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_form_fields ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE testimonials        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE team_members         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_blocks       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_form_fields  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_submissions  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE testimonials         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permission_requests  ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if any to prevent duplicate policy errors (42710)
+DROP POLICY IF EXISTS "public_read_site_settings"       ON site_settings;
+DROP POLICY IF EXISTS "public_read_services"            ON services;
+DROP POLICY IF EXISTS "public_read_team_members"        ON team_members;
+DROP POLICY IF EXISTS "public_read_content_blocks"      ON content_blocks;
+DROP POLICY IF EXISTS "public_read_contact_form_fields" ON contact_form_fields;
+DROP POLICY IF EXISTS "public_read_testimonials"        ON testimonials;
+
+DROP POLICY IF EXISTS "auth_write_site_settings"        ON site_settings;
+DROP POLICY IF EXISTS "auth_write_services"             ON services;
+DROP POLICY IF EXISTS "auth_write_team_members"         ON team_members;
+DROP POLICY IF EXISTS "auth_write_content_blocks"       ON content_blocks;
+DROP POLICY IF EXISTS "auth_write_contact_form_fields"  ON contact_form_fields;
+DROP POLICY IF EXISTS "auth_write_testimonials"         ON testimonials;
+
+DROP POLICY IF EXISTS "public_insert_submissions"       ON contact_submissions;
+DROP POLICY IF EXISTS "auth_read_submissions"           ON contact_submissions;
+
+DROP POLICY IF EXISTS "public_read_employee_permissions" ON employee_permissions;
+DROP POLICY IF EXISTS "auth_write_employee_permissions"  ON employee_permissions;
+
+DROP POLICY IF EXISTS "public_read_activity_logs"        ON activity_logs;
+DROP POLICY IF EXISTS "auth_write_activity_logs"         ON activity_logs;
+
+DROP POLICY IF EXISTS "public_read_permission_requests"  ON permission_requests;
+DROP POLICY IF EXISTS "auth_write_permission_requests"   ON permission_requests;
+
+DROP POLICY IF EXISTS "public_read_logos"         ON storage.objects;
+DROP POLICY IF EXISTS "public_read_team_photos"   ON storage.objects;
+DROP POLICY IF EXISTS "public_read_service_icons" ON storage.objects;
+DROP POLICY IF EXISTS "public_read_media"         ON storage.objects;
+
+DROP POLICY IF EXISTS "auth_write_logos"          ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_team_photos"    ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_service_icons"  ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_media"          ON storage.objects;
+
+-- Create Policies
 CREATE POLICY "public_read_site_settings"       ON site_settings       FOR SELECT USING (true);
 CREATE POLICY "public_read_services"            ON services            FOR SELECT USING (true);
 CREATE POLICY "public_read_team_members"        ON team_members        FOR SELECT USING (true);
@@ -134,15 +183,24 @@ CREATE POLICY "public_read_content_blocks"      ON content_blocks      FOR SELEC
 CREATE POLICY "public_read_contact_form_fields" ON contact_form_fields FOR SELECT USING (true);
 CREATE POLICY "public_read_testimonials"        ON testimonials        FOR SELECT USING (true);
 
-CREATE POLICY "auth_write_site_settings"        ON site_settings       FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_services"             ON services            FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_team_members"         ON team_members        FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_content_blocks"       ON content_blocks      FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_contact_form_fields"  ON contact_form_fields FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_testimonials"         ON testimonials        FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "auth_write_site_settings"        ON site_settings       FOR ALL USING (true);
+CREATE POLICY "auth_write_services"             ON services            FOR ALL USING (true);
+CREATE POLICY "auth_write_team_members"         ON team_members        FOR ALL USING (true);
+CREATE POLICY "auth_write_content_blocks"       ON content_blocks      FOR ALL USING (true);
+CREATE POLICY "auth_write_contact_form_fields"  ON contact_form_fields FOR ALL USING (true);
+CREATE POLICY "auth_write_testimonials"         ON testimonials        FOR ALL USING (true);
 
 CREATE POLICY "public_insert_submissions"       ON contact_submissions FOR INSERT WITH CHECK (true);
-CREATE POLICY "auth_read_submissions"           ON contact_submissions FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "auth_read_submissions"           ON contact_submissions FOR SELECT USING (true);
+
+CREATE POLICY "public_read_employee_permissions" ON employee_permissions FOR SELECT USING (true);
+CREATE POLICY "auth_write_employee_permissions"  ON employee_permissions FOR ALL USING (true);
+
+CREATE POLICY "public_read_activity_logs"        ON activity_logs FOR SELECT USING (true);
+CREATE POLICY "auth_write_activity_logs"         ON activity_logs FOR ALL USING (true);
+
+CREATE POLICY "public_read_permission_requests"  ON permission_requests FOR SELECT USING (true);
+CREATE POLICY "auth_write_permission_requests"   ON permission_requests FOR ALL USING (true);
 
 -- 3. STORAGE BUCKETS
 

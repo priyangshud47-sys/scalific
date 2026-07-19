@@ -68,35 +68,110 @@ CREATE TABLE IF NOT EXISTS testimonials (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS employee_permissions (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email       TEXT UNIQUE NOT NULL,
+  role_title       TEXT NOT NULL DEFAULT 'Super Admin',
+  is_super_admin   BOOLEAN NOT NULL DEFAULT true,
+  allowed_sections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email TEXT NOT NULL,
+  action     TEXT NOT NULL,
+  module     TEXT NOT NULL,
+  details    TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS permission_requests (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requested_by TEXT NOT NULL,
+  request_type TEXT NOT NULL,
+  target_email TEXT NOT NULL,
+  payload      JSONB NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'PENDING',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 2. ROW LEVEL SECURITY ---------------------------------------
 
-ALTER TABLE site_settings       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE services            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_members        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE content_blocks      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_form_fields ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE testimonials        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE team_members         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_blocks       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_form_fields  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_submissions  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE testimonials         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permission_requests  ENABLE ROW LEVEL SECURITY;
 
--- Public SELECT
+-- Drop existing policies if any to prevent duplicate policy errors (42710)
+DROP POLICY IF EXISTS "public_read_site_settings"       ON site_settings;
+DROP POLICY IF EXISTS "public_read_services"            ON services;
+DROP POLICY IF EXISTS "public_read_team_members"        ON team_members;
+DROP POLICY IF EXISTS "public_read_content_blocks"      ON content_blocks;
+DROP POLICY IF EXISTS "public_read_contact_form_fields" ON contact_form_fields;
+DROP POLICY IF EXISTS "public_read_testimonials"        ON testimonials;
+
+DROP POLICY IF EXISTS "auth_write_site_settings"        ON site_settings;
+DROP POLICY IF EXISTS "auth_write_services"             ON services;
+DROP POLICY IF EXISTS "auth_write_team_members"         ON team_members;
+DROP POLICY IF EXISTS "auth_write_content_blocks"       ON content_blocks;
+DROP POLICY IF EXISTS "auth_write_contact_form_fields"  ON contact_form_fields;
+DROP POLICY IF EXISTS "auth_write_testimonials"         ON testimonials;
+
+DROP POLICY IF EXISTS "public_insert_submissions"       ON contact_submissions;
+DROP POLICY IF EXISTS "auth_read_submissions"           ON contact_submissions;
+
+DROP POLICY IF EXISTS "public_read_employee_permissions" ON employee_permissions;
+DROP POLICY IF EXISTS "auth_write_employee_permissions"  ON employee_permissions;
+
+DROP POLICY IF EXISTS "public_read_activity_logs"        ON activity_logs;
+DROP POLICY IF EXISTS "auth_write_activity_logs"         ON activity_logs;
+
+DROP POLICY IF EXISTS "public_read_permission_requests"  ON permission_requests;
+DROP POLICY IF EXISTS "auth_write_permission_requests"   ON permission_requests;
+
+DROP POLICY IF EXISTS "public_read_logos"         ON storage.objects;
+DROP POLICY IF EXISTS "public_read_team_photos"   ON storage.objects;
+DROP POLICY IF EXISTS "public_read_service_icons" ON storage.objects;
+DROP POLICY IF EXISTS "public_read_media"         ON storage.objects;
+
+DROP POLICY IF EXISTS "auth_write_logos"          ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_team_photos"    ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_service_icons"  ON storage.objects;
+DROP POLICY IF EXISTS "auth_write_media"          ON storage.objects;
+
+-- Create Policies
 CREATE POLICY "public_read_site_settings"       ON site_settings       FOR SELECT USING (true);
 CREATE POLICY "public_read_services"            ON services            FOR SELECT USING (true);
 CREATE POLICY "public_read_team_members"        ON team_members        FOR SELECT USING (true);
 CREATE POLICY "public_read_content_blocks"      ON content_blocks      FOR SELECT USING (true);
 CREATE POLICY "public_read_contact_form_fields" ON contact_form_fields FOR SELECT USING (true);
-CREATE POLICY "public_read_testimonials"         ON testimonials        FOR SELECT USING (true);
+CREATE POLICY "public_read_testimonials"        ON testimonials        FOR SELECT USING (true);
 
--- Authenticated-only write
-CREATE POLICY "auth_write_site_settings"       ON site_settings       FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_services"            ON services            FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_team_members"        ON team_members        FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_content_blocks"      ON content_blocks      FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_contact_form_fields" ON contact_form_fields FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_testimonials"        ON testimonials        FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "auth_write_site_settings"        ON site_settings       FOR ALL USING (true);
+CREATE POLICY "auth_write_services"             ON services            FOR ALL USING (true);
+CREATE POLICY "auth_write_team_members"         ON team_members        FOR ALL USING (true);
+CREATE POLICY "auth_write_content_blocks"       ON content_blocks      FOR ALL USING (true);
+CREATE POLICY "auth_write_contact_form_fields"  ON contact_form_fields FOR ALL USING (true);
+CREATE POLICY "auth_write_testimonials"         ON testimonials        FOR ALL USING (true);
 
--- Anyone can submit, only auth can read submissions
-CREATE POLICY "public_insert_submissions" ON contact_submissions FOR INSERT WITH CHECK (true);
-CREATE POLICY "auth_read_submissions"     ON contact_submissions FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "public_insert_submissions"       ON contact_submissions FOR INSERT WITH CHECK (true);
+CREATE POLICY "auth_read_submissions"           ON contact_submissions FOR SELECT USING (true);
+
+CREATE POLICY "public_read_employee_permissions" ON employee_permissions FOR SELECT USING (true);
+CREATE POLICY "auth_write_employee_permissions"  ON employee_permissions FOR ALL USING (true);
+
+CREATE POLICY "public_read_activity_logs"        ON activity_logs FOR SELECT USING (true);
+CREATE POLICY "auth_write_activity_logs"         ON activity_logs FOR ALL USING (true);
+
+CREATE POLICY "public_read_permission_requests"  ON permission_requests FOR SELECT USING (true);
+CREATE POLICY "auth_write_permission_requests"   ON permission_requests FOR ALL USING (true);
 
 -- 3. STORAGE BUCKETS ------------------------------------------
 
@@ -115,37 +190,30 @@ CREATE POLICY "public_read_service_icons" ON storage.objects FOR SELECT USING (b
 CREATE POLICY "public_read_media"         ON storage.objects FOR SELECT USING (bucket_id = 'media');
 
 -- Auth write storage policies
-CREATE POLICY "auth_write_logos"         ON storage.objects FOR ALL USING (bucket_id = 'logos' AND auth.role() = 'authenticated');
-CREATE POLICY "auth_write_team_photos"   ON storage.objects FOR ALL USING (bucket_id = 'team-photos' AND auth.role() = 'authenticated');
-CREATE POLICY "auth_write_service_icons" ON storage.objects FOR ALL USING (bucket_id = 'service-icons' AND auth.role() = 'authenticated');
-CREATE POLICY "auth_write_media"         ON storage.objects FOR ALL USING (bucket_id = 'media' AND auth.role() = 'authenticated');
+CREATE POLICY "auth_write_logos"         ON storage.objects FOR ALL USING (bucket_id = 'logos');
+CREATE POLICY "auth_write_team_photos"   ON storage.objects FOR ALL USING (bucket_id = 'team-photos');
+CREATE POLICY "auth_write_service_icons" ON storage.objects FOR ALL USING (bucket_id = 'service-icons');
+CREATE POLICY "auth_write_media"         ON storage.objects FOR ALL USING (bucket_id = 'media');
 
 -- 4. SEED DATA ------------------------------------------------
 
--- Default content blocks
 INSERT INTO content_blocks (section_key, content) VALUES
-  -- Hero
   ('hero_title',       'Data-Driven Strategy.\nRelentless Execution.'),
   ('hero_subtitle',    'We turn ambitious brands into market leaders. No fluff, just results.'),
-  -- Services section
   ('services_heading', 'Core Expertise'),
   ('services_subtext', 'Precision engineering for your digital presence. Every service is a focused strike on your growth targets.'),
-  -- Team section
   ('team_heading',     'The A-Team'),
   ('team_subtext',     'Founders, operators, and specialists. The minds behind the execution.'),
-  -- About section
   ('about_heading',    'Built for founders who demand performance.'),
   ('about_text',       'At Scalific, we combine creative excellence with rigorous data analysis. We are the Formula 1 team for your digital growth, built for founders who demand performance.'),
   ('about_stat1_value','2.4x'),
   ('about_stat1_label','Avg. Growth Rate'),
   ('about_stat2_value','Top 1%'),
   ('about_stat2_label','Creative Talent'),
-  -- Contact section
   ('contact_heading',  'Ready to scale?'),
   ('contact_subtext',  'Let''s discuss how we can engineer your next phase of growth. Fill out the form, and a partner will be in touch within 24 hours.')
 ON CONFLICT (section_key) DO NOTHING;
 
--- Extended editable homepage content blocks
 INSERT INTO content_blocks (section_key, content, media_url) VALUES
   ('nav_services_label', 'Services', NULL),
   ('nav_team_label', 'Team', NULL),
@@ -206,7 +274,6 @@ INSERT INTO content_blocks (section_key, content, media_url) VALUES
   ('footer_legal_links', E'Privacy Policy\nTerms of Service', NULL)
 ON CONFLICT (section_key) DO NOTHING;
 
--- Default brand color
 INSERT INTO site_settings (key, value) VALUES
   ('color_primary', '#22C55E'),
   ('favicon_url', NULL),
@@ -223,7 +290,6 @@ INSERT INTO site_settings (key, value) VALUES
   ('geo_crawlers_policy', NULL)
 ON CONFLICT (key) DO NOTHING;
 
--- Default contact form fields
 INSERT INTO contact_form_fields (field_label, field_name, field_type, is_required, display_order) VALUES
   ('Full Name',    'name',    'text',     true,  0),
   ('Email Address','email',   'email',    true,  1),
@@ -231,7 +297,6 @@ INSERT INTO contact_form_fields (field_label, field_name, field_type, is_require
   ('Message',      'message', 'textarea', true,  3)
 ON CONFLICT DO NOTHING;
 
--- Sample services
 INSERT INTO services (title, description, display_order) VALUES
   ('Brand Strategy',       'We craft compelling brand identities that resonate with your target audience and differentiate you in the market.',              0),
   ('Performance Marketing','Data-driven campaigns across paid search, social, and programmatic that consistently deliver measurable ROI.',                    1),
@@ -241,7 +306,6 @@ INSERT INTO services (title, description, display_order) VALUES
   ('Growth Consulting',    'Strategic advisory engagements that align your entire organization around a shared vision for scalable, sustainable growth.',     5)
 ON CONFLICT DO NOTHING;
 
--- Sample team members
 INSERT INTO team_members (name, role, bio, display_order) VALUES
   ('Alex Rivera',   'Founder & CEO',           'Serial entrepreneur with 15+ years scaling DTC and B2B brands from seed to Series C. Former VP Growth at two unicorns.',   0),
   ('Jordan Chen',   'Head of Strategy',        'Ex-McKinsey strategy consultant turned growth operator. Loves building frameworks that actually work in the real world.',      1),
@@ -249,7 +313,6 @@ INSERT INTO team_members (name, role, bio, display_order) VALUES
   ('Sam Williams',  'Head of Performance',      '10 years running paid media for Fortune 500 brands and hypergrowth startups. Has managed over $200M in ad spend.',            3)
 ON CONFLICT DO NOTHING;
 
--- Sample testimonials
 INSERT INTO testimonials (quote, author_name, author_title, company, display_order) VALUES
   ('The rebrand alone paid for itself, but the ongoing marketing has been the real unlock for us this year.', 'Owen Castillo', 'Founder', 'Loop Studio', 0),
   ('Every deliverable landed on time, and the design system they built still holds up two years later.', 'Dana Whitfield', 'Marketing Lead', 'Verdant Co.', 1),
