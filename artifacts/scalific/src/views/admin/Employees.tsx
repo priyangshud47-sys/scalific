@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ShieldCheck, Plus, Trash2, Edit2, Loader2, Users, Lock, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, Edit2, Loader2, Users, Lock, Clock, CheckCircle2, XCircle, AlertTriangle, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { logActivity } from "@/lib/logger";
 
@@ -65,6 +65,61 @@ export default function AdminEmployees() {
   const [formRole, setFormRole] = useState("Employee");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedSections, setSelectedSections] = useState<string[]>(ALL_SECTIONS.map((s) => s.id));
+
+  // Password Reset State
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [targetPasswordEmail, setTargetPasswordEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswordText, setShowPasswordText] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  const openPasswordDialog = (emp: EmployeeRecord) => {
+    setTargetPasswordEmail(emp.user_email);
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordDialogOpen(true);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match. Please check and try again.");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetEmail: targetPasswordEmail,
+          newPassword,
+          adminEmail: currentUserEmail,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update password");
+
+      toast.success(`Password for ${targetPasswordEmail} updated successfully!`);
+      await logActivity(
+        "UPDATE",
+        "Employees",
+        `Super Admin changed password for employee ${targetPasswordEmail}`
+      );
+      setPasswordDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update employee password");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -494,6 +549,17 @@ export default function AdminEmployees() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {isCurrentSuperAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openPasswordDialog(emp)}
+                            title="Change Employee Password"
+                            className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -614,6 +680,72 @@ export default function AdminEmployees() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-amber-500" />
+              <span>Change Employee Password</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleResetPassword} className="space-y-4 pt-3">
+            <div className="p-3 rounded-lg border border-border bg-muted/20 text-xs space-y-1">
+              <span className="text-muted-foreground block">Target Employee:</span>
+              <span className="font-bold text-foreground block truncate">{targetPasswordEmail}</span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                New Password
+              </label>
+              <div className="relative">
+                <Input
+                  type={showPasswordText ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 chars)"
+                  required
+                  className="bg-background/50 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordText(!showPasswordText)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Confirm New Password
+              </label>
+              <Input
+                type={showPasswordText ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter new password"
+                required
+                className="bg-background/50"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updatingPassword} className="gap-2">
+                {updatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                {updatingPassword ? "Updating..." : "Update Password"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
