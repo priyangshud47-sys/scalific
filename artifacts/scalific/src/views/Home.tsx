@@ -340,7 +340,7 @@ export default function Home() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-white/95 backdrop-blur-md border-b border-border py-4" : "bg-transparent py-6"}`}>
         <div className="container mx-auto px-6 flex items-center justify-between">
           <a href="#" onClick={(e) => { e.preventDefault(); scrollTo("hero"); }} className="relative z-10 flex items-center gap-2 group">
-            <img src={finalLogo} alt="Scalific" className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105" />
+            <img src={finalLogo} alt="Scalific" decoding="async" loading="eager" fetchPriority="high" className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105" />
           </a>
 
           {/* Desktop Nav */}
@@ -650,6 +650,8 @@ export default function Home() {
                         <img 
                           src={member.photo_url} 
                           alt={member.name} 
+                          decoding="async"
+                          loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       ) : (
@@ -745,6 +747,8 @@ export default function Home() {
                   <img 
                     src={aboutImageUrl}
                     alt="Abstract team collaboration"
+                    decoding="async"
+                    loading="lazy"
                     className="w-full h-full object-cover opacity-80 mix-blend-luminosity"
                   />
                   <div className="absolute inset-0 border-[20px] border-[#F4F6F5]/10 rounded-3xl" />
@@ -938,7 +942,7 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 mb-12 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start">
-              <img src={finalFooterLogo} alt="Scalific" className="h-20 md:h-24 w-auto object-contain opacity-90 hover:opacity-100 transition-all mx-auto md:mx-0" />
+              <img src={finalFooterLogo} alt="Scalific" decoding="async" loading="lazy" className="h-20 md:h-24 w-auto object-contain opacity-90 hover:opacity-100 transition-all mx-auto md:mx-0" />
               <p className="mt-5 text-sm text-gray-400 max-w-sm leading-relaxed mx-auto md:mx-0">
                 {footerDescription}
               </p>
