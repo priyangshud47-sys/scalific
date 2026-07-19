@@ -1,3 +1,4 @@
+import AdminShell from "../AdminShell";
 import AdminContactInfo from "@/views/admin/ContactInfo";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function ContactInfoPage() {
-  return <AdminContactInfo />;
+  return (
+    <AdminShell>
+      <AdminContactInfo />
+    </AdminShell>
+  );
 }
