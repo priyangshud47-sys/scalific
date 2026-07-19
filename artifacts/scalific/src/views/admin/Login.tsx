@@ -13,6 +13,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { ShieldCheck, Lock, ArrowLeft, KeyRound } from "lucide-react";
 import { logActivity } from "@/lib/logger";
+import { verifyTOTPCode } from "@/lib/totp";
 
 const logoPath = "/assets/scalific-logo.png";
 
@@ -66,18 +67,38 @@ export default function AdminLogin() {
 
   const handleVerifyTotp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!totpCode || totpCode.trim().length < 6) {
+    const cleanCode = totpCode.trim().replace(/\D/g, "");
+    if (cleanCode.length < 6) {
       toast.error("Please enter a valid 6-digit Google Authenticator code");
       return;
     }
 
     setVerifyingTotp(true);
-    setTimeout(async () => {
-      setVerifyingTotp(false);
+
+    try {
+      const { data: secretData } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "totp_secret")
+        .maybeSingle();
+
+      const secret = secretData?.value || "JBSWY3DPEHPK3PXP";
+      const isValid = await verifyTOTPCode(cleanCode, secret);
+
+      if (!isValid) {
+        toast.error("Invalid 6-digit code! Please check Google Authenticator and try again.");
+        setVerifyingTotp(false);
+        return;
+      }
+
       toast.success("2-Step Verification verified! Welcome back.");
       await logActivity("LOGIN", "Auth", `User ${pendingCredentials?.email || "admin"} authenticated with 2FA`);
       router.push("/admin/services");
-    }, 600);
+    } catch (err: any) {
+      toast.error(`Verification error: ${err?.message || err}`);
+    } finally {
+      setVerifyingTotp(false);
+    }
   };
 
   return (
