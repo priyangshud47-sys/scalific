@@ -1,0 +1,41 @@
+Build a premium agency website called "Scalific" using Next.js 14 (App Router, TypeScript, Tailwind CSS) with Supabase as the backend. Use the Supabase credentials already stored in my Secrets: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
+
+BRAND / DESIGN:
+- Primary green gradient: #22C55E to #15803D
+- Light green accent: #86EFAC
+- Dark text/background: #181B20
+- White background: #FFFFFF, light gray section background: #F4F6F5
+- Modern, premium agency aesthetic: bold typography, generous whitespace, smooth cinematic scroll animations using Framer Motion (parallax hero, staggered fade-ins on scroll for cards/sections). Keep animations GPU-friendly (transform/opacity only).
+
+DATABASE (create this schema in Supabase via SQL):
+- site_settings(id, key, value, updated_at) — for logo_url and other global settings
+- services(id, title, description, icon_url, display_order, is_active, created_at)
+- team_members(id, name, role, photo_url, bio, linkedin_url, display_order, is_active)
+- content_blocks(id, section_key unique, content, media_url, updated_at) — for hero_title, hero_subtitle, about_text, etc.
+- contact_form_fields(id, field_label, field_name, field_type, is_required, options jsonb, display_order) — lets me control what fields appear on the contact form
+- contact_submissions(id, data jsonb, submitted_at)
+
+Enable Row Level Security: public can SELECT from site_settings, services, team_members, content_blocks, contact_form_fields. Only authenticated users can INSERT/UPDATE/DELETE on those. Anyone can INSERT into contact_submissions, only authenticated users can SELECT it.
+
+Also create Supabase Storage buckets (public read): logos, team-photos, service-icons, media.
+
+PUBLIC SITE (all content pulled live from Supabase, not hardcoded):
+- Header with logo pulled from site_settings.logo_url
+- Hero section: headline/subheadline/media from content_blocks, parallax scroll animation
+- Services section: cards rendered from the services table, ordered by display_order, scroll-triggered stagger animation
+- Team section: grid rendered from team_members table with photo, name, role, bio, scroll fade/scale animation
+- Contact section: form fields rendered dynamically from contact_form_fields (support text, email, textarea, phone, select field types), submitting to contact_submissions via a server action
+- Footer with logo and basic links
+
+ADMIN PANEL (protected routes under /admin, using Supabase Auth email/password login):
+- /admin/login — email/password sign in
+- /admin/services — table view with add/edit/delete/reorder for services
+- /admin/team — table view with add/edit/delete/reorder for team members, with photo upload to the team-photos bucket
+- /admin/content — form to edit each content_blocks row (hero title, hero subtitle, about text, etc.)
+- /admin/contact-form — builder UI to add/edit/delete/reorder contact_form_fields
+- /admin/branding — upload a new logo to the logos bucket and update site_settings.logo_url
+- /admin/submissions — table listing all contact_submissions
+
+Middleware should protect all /admin/* routes except /admin/login, redirecting unauthenticated users to /admin/login. Use the service role key only in server actions, never expose it client-side. Call revalidatePath after every admin write so the public site updates instantly.
+
+Set everything up, run the SQL migrations against Supabase, and get the dev server running.
