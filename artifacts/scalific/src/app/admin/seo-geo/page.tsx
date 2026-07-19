@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminSeoGeo from "@/pages/admin/SeoGeo";
+import AdminSeoGeo from "@/views/admin/SeoGeo";
 
 export default function AdminSeoGeoPage() {
   return (

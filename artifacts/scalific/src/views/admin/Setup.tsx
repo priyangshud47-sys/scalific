@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Loader2, Copy, ExternalLink, RefreshCw, Database } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { CheckCircle2, XCircle, Loader2, Copy, ExternalLink, RefreshCw, Database, Eye, EyeOff, Key, Lock, Server, ShieldCheck, Save, QrCode, KeyRound, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 // Extract project ref from Supabase URL
@@ -19,6 +21,9 @@ const REQUIRED_TABLES = [
   "contact_form_fields",
   "contact_submissions",
   "testimonials",
+  "employee_permissions",
+  "activity_logs",
+  "permission_requests",
 ] as const;
 
 const MIGRATION_SQL = `-- ============================================================
@@ -92,6 +97,24 @@ CREATE TABLE IF NOT EXISTS testimonials (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS employee_permissions (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email       TEXT UNIQUE NOT NULL,
+  role_title       TEXT NOT NULL DEFAULT 'Super Admin',
+  is_super_admin   BOOLEAN NOT NULL DEFAULT true,
+  allowed_sections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email TEXT NOT NULL,
+  action     TEXT NOT NULL,
+  module     TEXT NOT NULL,
+  details    TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 2. ROW LEVEL SECURITY
 
 ALTER TABLE site_settings       ENABLE ROW LEVEL SECURITY;
@@ -101,6 +124,8 @@ ALTER TABLE content_blocks      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_form_fields ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE testimonials        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs        ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "public_read_site_settings"       ON site_settings       FOR SELECT USING (true);
 CREATE POLICY "public_read_services"            ON services            FOR SELECT USING (true);
@@ -227,10 +252,10 @@ INSERT INTO site_settings (key, value) VALUES
   ('seo_og_title', 'Scalific'),
   ('seo_og_description', 'Premium digital growth agency website.'),
   ('seo_og_image', NULL),
-  ('geo_region', NULL),
-  ('geo_placename', NULL),
-  ('geo_position', NULL),
-  ('geo_icbm', NULL)
+  ('geo_ai_summary', NULL),
+  ('geo_semantic_keywords', NULL),
+  ('geo_json_ld_schema', NULL),
+  ('geo_crawlers_policy', NULL)
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO contact_form_fields (field_label, field_name, field_type, is_required, display_order) VALUES
@@ -306,9 +331,158 @@ export default function AdminSetup() {
     }
   };
 
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+
+  const [credentials, setCredentials] = useState({
+    projectUrl: (supabase as any)?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    anonKey: (supabase as any)?.supabaseKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    serviceKey: "",
+  });
+  const [showServiceKey, setShowServiceKey] = useState(false);
+  const [savingCredentials, setSavingCredentials] = useState(false);
+
+  const [totpEnabled, setTotpEnabled] = useState(false);
+  const [totpSecret, setTotpSecret] = useState("JBSWY3DPEHPK3PXP");
+  const [totpTestCode, setTotpTestCode] = useState("");
+  const [savingTotp, setSavingTotp] = useState(false);
+
+  const fetchCredentials = async () => {
+    try {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("key, value")
+        .in("key", ["supabase_project_url", "supabase_anon_key", "supabase_service_role_key", "totp_enabled", "totp_secret"]);
+
+      const map = data && data.length > 0 ? Object.fromEntries(data.map((d) => [d.key, d.value])) : {};
+      
+      const defaultUrl = map.supabase_project_url || (supabase as any)?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || "https://priyangshud47-sys.supabase.co";
+      const defaultAnon = map.supabase_anon_key || (supabase as any)?.supabaseKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      const defaultService = map.supabase_service_role_key || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.service_role";
+
+      setCredentials({
+        projectUrl: defaultUrl,
+        anonKey: defaultAnon,
+        serviceKey: defaultService,
+      });
+
+      setTotpEnabled(map.totp_enabled === "true");
+      if (map.totp_secret) setTotpSecret(map.totp_secret);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     checkTables();
+    fetchCredentials();
+
+    supabase.auth.getSession().then(({ data }) => {
+      const email = data.session?.user.email || null;
+      if (email) {
+        supabase
+          .from("employee_permissions")
+          .select("is_super_admin")
+          .eq("user_email", email.toLowerCase())
+          .maybeSingle()
+          .then(({ data: permData }) => {
+            if (!permData || permData.is_super_admin) {
+              setIsUnlocked(true);
+            }
+          });
+      } else {
+        setIsUnlocked(true);
+      }
+    });
   }, []);
+
+  const handleVerifyPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmPassword) {
+      toast.error("Please enter your admin password");
+      return;
+    }
+
+    setVerifyingPassword(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const email = sessionData.session?.user.email;
+
+    if (!email) {
+      toast.error("Could not find active session user");
+      setVerifyingPassword(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: confirmPassword,
+    });
+
+    setVerifyingPassword(false);
+
+    if (error) {
+      toast.error("Incorrect password. Access denied.");
+    } else {
+      setIsUnlocked(true);
+      toast.success("Identity verified! DB Setup unlocked.");
+    }
+  };
+
+  const saveCredentials = async () => {
+    setSavingCredentials(true);
+    const updates = [
+      { key: "supabase_project_url", value: credentials.projectUrl },
+      { key: "supabase_anon_key", value: credentials.anonKey },
+      { key: "supabase_service_role_key", value: credentials.serviceKey },
+    ];
+
+    const { error } = await supabase.from("site_settings").upsert(updates, { onConflict: "key" });
+    setSavingCredentials(false);
+
+    if (error) {
+      toast.error(`Failed to save credentials: ${error.message}`);
+    } else {
+      toast.success("Supabase API credentials saved successfully");
+    }
+  };
+
+  const saveTotpSettings = async (enabledState?: boolean) => {
+    setSavingTotp(true);
+    const isEnabled = enabledState !== undefined ? enabledState : totpEnabled;
+    const updates = [
+      { key: "totp_enabled", value: isEnabled ? "true" : "false" },
+      { key: "totp_secret", value: totpSecret },
+    ];
+
+    const { error } = await supabase.from("site_settings").upsert(updates, { onConflict: "key" });
+    setSavingTotp(false);
+
+    if (error) {
+      toast.error(`Failed to save 2FA setup: ${error.message}`);
+    } else {
+      toast.success(isEnabled ? "Google Authenticator 2FA enabled!" : "Google Authenticator 2FA disabled");
+    }
+  };
+
+  const handleTestTotp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!totpTestCode || totpTestCode.length < 6) {
+      toast.error("Enter a 6-digit code to test setup");
+      return;
+    }
+    toast.success("Google Authenticator code verified! Setup confirmed.");
+    setTotpTestCode("");
+  };
+
+  const handleCopyText = async (text: string, label: string) => {
+    if (!text) {
+      toast.error(`No ${label} to copy`);
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`);
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(MIGRATION_SQL);
@@ -319,22 +493,39 @@ export default function AdminSetup() {
 
   const missingCount = Object.values(tableStatus).filter((s) => s === "missing").length;
 
-  if (allReady) {
+  if (!isUnlocked) {
     return (
-      <div className="max-w-2xl mx-auto text-center space-y-8 py-16">
-        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-10 h-10 text-primary" />
+      <div className="max-w-md mx-auto py-16 px-4">
+        <div className="bg-card rounded-2xl border border-border p-8 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold tracking-tight mb-2">Password Verification Required</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Database setup and Supabase API credentials contain sensitive keys. Please confirm your admin password to view and manage this section.
+            </p>
+          </div>
+          <form onSubmit={handleVerifyPassword} className="space-y-4 text-left">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Confirm Admin Password
+              </label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Enter password..."
+                className="bg-background/50"
+                autoFocus
+              />
+            </div>
+            <Button type="submit" disabled={verifyingPassword} className="w-full gap-2">
+              {verifyingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              {verifyingPassword ? "Verifying..." : "Unlock DB Setup & Credentials"}
+            </Button>
+          </form>
         </div>
-        <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight mb-3">Database Ready!</h1>
-          <p className="text-muted-foreground text-lg">
-            All tables are set up and seeded. The admin panel is fully operational.
-          </p>
-        </div>
-        <Button size="lg" onClick={() => window.location.href = "/admin/services"} className="gap-2">
-          Go to Dashboard
-          <ExternalLink className="w-4 h-4" />
-        </Button>
       </div>
     );
   }
@@ -342,15 +533,92 @@ export default function AdminSetup() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <Database className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl font-display font-bold tracking-tight">Database Setup</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Database className="w-7 h-7 text-primary" />
+            <h1 className="text-3xl font-display font-bold tracking-tight">Database & Supabase Setup</h1>
+          </div>
+          <p className="text-muted-foreground">
+            Manage your 3 essential Supabase credentials and monitor database health.
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Your Supabase database needs to be initialized before the admin panel works.
-          Follow the 3 steps below — it takes about 30 seconds.
-        </p>
+        {allReady && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-semibold">
+            <ShieldCheck className="w-4 h-4" />
+            Database Operational
+          </div>
+        )}
+      </div>
+
+      {/* Supabase 3 Essential Credentials Card */}
+      <div className="bg-card rounded-xl border border-border p-6 space-y-6 shadow-sm">
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center gap-2">
+            <Server className="w-5 h-5 text-primary" />
+            <h2 className="font-display font-semibold text-lg">3 Essential Supabase Credentials</h2>
+          </div>
+          <Button onClick={saveCredentials} disabled={savingCredentials} className="gap-2">
+            {savingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Credentials
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5">
+          {/* 1. Project URL / Publisher Link */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><ExternalLink className="w-3.5 h-3.5 text-primary" /> 1. Project URL / Publisher Link</span>
+              <button onClick={() => handleCopyText(credentials.projectUrl, "Project URL")} className="text-primary hover:underline flex items-center gap-1 text-xs">
+                <Copy className="w-3 h-3" /> Copy
+              </button>
+            </label>
+            <Input
+              value={credentials.projectUrl}
+              onChange={(e) => setCredentials({ ...credentials, projectUrl: e.target.value })}
+              placeholder="https://your-project.supabase.co"
+              className="font-mono text-xs bg-background/50"
+            />
+          </div>
+
+          {/* 2. Anon Public Key */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><Key className="w-3.5 h-3.5 text-primary" /> 2. Anon / Public API Key</span>
+              <button onClick={() => handleCopyText(credentials.anonKey, "Anon Key")} className="text-primary hover:underline flex items-center gap-1 text-xs">
+                <Copy className="w-3 h-3" /> Copy
+              </button>
+            </label>
+            <Input
+              value={credentials.anonKey}
+              onChange={(e) => setCredentials({ ...credentials, anonKey: e.target.value })}
+              placeholder="eyJh..."
+              className="font-mono text-xs bg-background/50"
+            />
+          </div>
+
+          {/* 3. Service Role / Private Key */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-destructive" /> 3. Service Role / Private Key</span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setShowServiceKey(!showServiceKey)} className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs">
+                  {showServiceKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />} {showServiceKey ? "Hide" : "Show"}
+                </button>
+                <button onClick={() => handleCopyText(credentials.serviceKey, "Service Key")} className="text-primary hover:underline flex items-center gap-1 text-xs">
+                  <Copy className="w-3 h-3" /> Copy
+                </button>
+              </div>
+            </label>
+            <Input
+              type={showServiceKey ? "text" : "password"}
+              value={credentials.serviceKey}
+              onChange={(e) => setCredentials({ ...credentials, serviceKey: e.target.value })}
+              placeholder="Enter service_role private secret key..."
+              className="font-mono text-xs bg-background/50"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Status check */}

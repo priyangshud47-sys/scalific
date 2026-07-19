@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminBranding from "@/pages/admin/Branding";
+import AdminBranding from "@/views/admin/Branding";
 
 export default function AdminBrandingPage() {
   return (

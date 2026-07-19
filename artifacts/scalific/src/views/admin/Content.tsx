@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ContentBlock } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Save, AlertCircle, Plus } from "lucide-react";
+import { Save, AlertCircle, Plus, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -97,6 +97,42 @@ export default function AdminContent() {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [edits, setEdits] = useState<Record<string, { content: string; media_url: string }>>({});
   const [seeding, setSeeding] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState<Record<string, boolean>>({});
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeBlockId) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size must be less than 2MB");
+      return;
+    }
+
+    setUploadingMedia((prev) => ({ ...prev, [activeBlockId]: true }));
+    const fileExt = file.name.split(".").pop();
+    const fileName = `content_media_${activeBlockId}_${Date.now()}.${fileExt}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage.from("media").upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("media").getPublicUrl(fileName);
+
+      handleEdit(activeBlockId, 'media_url', publicUrl);
+      toast.success("Media file uploaded successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to upload media file");
+    } finally {
+      setUploadingMedia((prev) => ({ ...prev, [activeBlockId]: false }));
+      setActiveBlockId(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const fetchBlocks = async () => {
     setLoading(true);
@@ -269,14 +305,60 @@ export default function AdminContent() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Media URL (Optional)</label>
-                    <Input 
-                      value={edits[block.id]?.media_url || ""} 
-                      onChange={(e) => handleEdit(block.id, 'media_url', e.target.value)}
-                      placeholder="https://..."
-                      className="bg-background/50"
-                    />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        Media Asset / Image URL
+                      </label>
+                      {uploadingMedia[block.id] && (
+                        <span className="text-xs text-primary flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                        </span>
+                      )}
+                    </div>
+                    
+                    {edits[block.id]?.media_url ? (
+                      <div className="relative w-full max-w-md aspect-video rounded-xl border border-border bg-muted/20 overflow-hidden flex items-center justify-center p-2 group">
+                        <img
+                          src={edits[block.id].media_url}
+                          alt="Media Preview"
+                          className="max-h-full max-w-full object-contain rounded-lg shadow-sm z-10"
+                        />
+                      </div>
+                    ) : null}
+
+                    <div className="flex gap-2">
+                      <Input 
+                        value={edits[block.id]?.media_url || ""} 
+                        onChange={(e) => handleEdit(block.id, 'media_url', e.target.value)}
+                        placeholder="https://..."
+                        className="bg-background/50 text-xs font-mono flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={uploadingMedia[block.id]}
+                        onClick={() => {
+                          setActiveBlockId(block.id);
+                          fileInputRef.current?.click();
+                        }}
+                        className="gap-2 shrink-0"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload Image
+                      </Button>
+                      {edits[block.id]?.media_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => handleEdit(block.id, 'media_url', '')}
+                          className="text-destructive hover:bg-destructive/10 shrink-0"
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -296,6 +378,13 @@ export default function AdminContent() {
           ))}
         </div>
       )}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleMediaUpload}
+        accept="image/*"
+        className="hidden"
+      />
     </div>
   );
 }

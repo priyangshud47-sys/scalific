@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminContactForm from "@/pages/admin/ContactForm";
+import AdminContactForm from "@/views/admin/ContactForm";
 
 export default function AdminContactFormPage() {
   return (

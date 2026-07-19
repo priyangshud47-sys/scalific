@@ -6,6 +6,9 @@ import "../index.css";
 export const metadata: Metadata = {
   title: "Scalific",
   description: "Premium digital growth agency website.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

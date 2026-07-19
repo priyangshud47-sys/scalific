@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminServices from "@/pages/admin/Services";
+import AdminServices from "@/views/admin/Services";
 
 export default function AdminServicesPage() {
   return (

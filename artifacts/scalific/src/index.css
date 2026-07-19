@@ -46,6 +46,11 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
+  --color-primary-dark: hsl(var(--primary-dark));
+  --color-primary-light: hsl(var(--primary-light));
+  --color-primary-border-light: hsl(var(--primary-border-light));
+  --color-primary-via: hsl(var(--primary-via));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -118,6 +123,11 @@
   --chart-3: 142 72% 29%;
   --chart-4: 218 14% 50%;
   --chart-5: 218 14% 80%;
+
+  --primary-dark: 142 72% 29%;
+  --primary-light: 142 55% 97%;
+  --primary-border-light: 142 55% 90%;
+  --primary-via: 142 70% 73%;
 
   --app-font-sans: 'Outfit', sans-serif;
   --app-font-display: 'Syne', sans-serif;
@@ -235,6 +245,11 @@
   --chart-3: 142 72% 29%;
   --chart-4: 218 14% 50%;
   --chart-5: 218 14% 80%;
+
+  --primary-dark: 142 72% 29%;
+  --primary-light: 142 55% 97%;
+  --primary-border-light: 142 55% 90%;
+  --primary-via: 142 70% 73%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(var(--shadow-color) / 0.28);
   --shadow-xs: 0px 2px 0px 0px hsl(var(--shadow-color) / 0.32);

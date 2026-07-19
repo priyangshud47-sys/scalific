@@ -62,8 +62,23 @@ export function applyBrandColor(hex: string) {
   const hslValue = `${hsl.h} ${hsl.s}% ${hsl.l}%`;
   const shadowColor = `${hsl.h} ${Math.min(100, Math.max(20, hsl.s))}% ${Math.max(12, hsl.l - 18)}%`;
 
-  document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+  const darkLuminosity = Math.max(15, hsl.l - 20);
+  const lightLuminosity = 97;
+  const borderLuminosity = 90;
+  const viaLuminosity = Math.min(85, hsl.l + 20);
+
+  const darkHsl = `${hsl.h} ${hsl.s}% ${darkLuminosity}%`;
+  const lightHsl = `${hsl.h} ${Math.min(30, hsl.s)}% ${lightLuminosity}%`;
+  const borderHsl = `${hsl.h} ${Math.min(40, hsl.s)}% ${borderLuminosity}%`;
+  const viaHsl = `${hsl.h} ${hsl.s}% ${viaLuminosity}%`;
+
+  document.documentElement.style.setProperty("--primary", hslValue);
   document.documentElement.style.setProperty("--primary-hex", hex);
+  document.documentElement.style.setProperty("--primary-dark", darkHsl);
+  document.documentElement.style.setProperty("--primary-light", lightHsl);
+  document.documentElement.style.setProperty("--primary-border-light", borderHsl);
+  document.documentElement.style.setProperty("--primary-via", viaHsl);
+
   document.documentElement.style.setProperty("--ring", hslValue);
   document.documentElement.style.setProperty("--chart-1", hslValue);
   document.documentElement.style.setProperty("--accent", `${hsl.h} ${Math.min(100, hsl.s + 5)}% ${Math.min(82, hsl.l + 26)}%`);

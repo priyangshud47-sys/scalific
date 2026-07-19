@@ -32,8 +32,18 @@ const getBlockList = (blocks: Record<string, ContentBlock>, key: string, fallbac
     .filter(Boolean);
 };
 
-// Helper for dynamic icons
-const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
+// Helper for dynamic icons (supports both SVG strings and Lucide names)
+const ServiceIcon = ({ icon, title, className }: { icon: string | null; title: string; className?: string }) => {
+  const trimmed = icon?.trim();
+  if (trimmed && (trimmed.startsWith("<svg") || trimmed.startsWith("<SVG"))) {
+    return (
+      <div 
+        className={`${className} flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-full [&>svg]:max-h-full`}
+        dangerouslySetInnerHTML={{ __html: trimmed }}
+      />
+    );
+  }
+  const name = icon || title.split(" ")[0] || "Activity";
   // @ts-ignore
   const IconComponent = LucideIcons[name] || LucideIcons.Activity;
   return <IconComponent className={className} />;
@@ -298,7 +308,7 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
       <motion.div
         style={{ scaleX: scrollProgress }}
-        className="fixed top-0 left-0 right-0 h-1 origin-left bg-gradient-to-r from-primary via-[#86EFAC] to-emerald-700 z-[60]"
+        className="fixed top-0 left-0 right-0 h-1 origin-left bg-gradient-to-r from-primary via-primary-via to-primary-dark z-[60]"
       />
 
       {/* Header */}
@@ -447,12 +457,12 @@ export default function Home() {
                 {servicesHeading.includes(" ") ? (
                   <>
                     {servicesHeading.split(" ").slice(0, -1).join(" ")}{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-700">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dark">
                       {servicesHeading.split(" ").slice(-1)[0]}
                     </span>
                   </>
                 ) : (
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-700">{servicesHeading}</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dark">{servicesHeading}</span>
                 )}
               </h2>
               <p className="text-muted-foreground text-lg max-w-xl">{servicesSubtext}</p>
@@ -487,7 +497,7 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="relative z-10">
                     <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                      <DynamicIcon name={service.title.split(' ')[0] || "Activity"} className="w-6 h-6" />
+                      <ServiceIcon icon={service.icon_url} title={service.title} className="w-6 h-6" />
                     </div>
                     <h3 className="font-display text-xl font-bold mb-3 group-hover:text-primary transition-colors">{service.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">
@@ -501,7 +511,7 @@ export default function Home() {
         </section>
 
         {/* Process + Results */}
-        <section className="py-32 bg-emerald-50/80 border-y border-emerald-100">
+        <section className="py-32 bg-primary-light/80 border-y border-primary-border-light">
           <div className="container mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
               <motion.div
@@ -564,7 +574,7 @@ export default function Home() {
                     >
                       <div className="absolute -right-12 -bottom-12 w-36 h-36 bg-primary/30 rounded-full blur-3xl" />
                       <div className="relative z-10">
-                        <div className="font-display text-4xl font-bold text-[#86EFAC]">{stat.value}</div>
+                        <div className="font-display text-4xl font-bold text-primary-via">{stat.value}</div>
                         <p className="text-sm text-white/70 mt-3 leading-relaxed">{stat.label}</p>
                       </div>
                     </motion.div>
@@ -589,12 +599,12 @@ export default function Home() {
                   {teamHeading.includes(" ") ? (
                     <>
                       {teamHeading.split(" ").slice(0, -1).join(" ")}{" "}
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-700">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dark">
                         {teamHeading.split(" ").slice(-1)[0]}
                       </span>
                     </>
                   ) : (
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-700">{teamHeading}</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dark">{teamHeading}</span>
                   )}
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-xl mx-auto">{teamSubtext}</p>
@@ -637,42 +647,23 @@ export default function Home() {
         {/* Founder Story */}
         <section className="py-32 bg-white border-y border-border">
           <div className="container mx-auto px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+            <div className="max-w-3xl mx-auto text-center">
               <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-lg"
-              >
-                {founder?.photo_url ? (
-                  <img src={founder.photo_url} alt={founder.name} className="w-full h-full object-cover" />
-                ) : (
-                  <img
-                    src={founderFallbackImage}
-                    alt="Founder portrait"
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-primary">
-                  {founder?.role || "Founder"}
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
               >
                 <span className="text-xs font-bold uppercase tracking-[0.25em] text-primary">{founderEyebrow}</span>
-                <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-4 mb-6">
+                <h2 className="font-display text-4xl md:text-5xl font-bold tracking-tight mt-4 mb-8">
                   {founderHeading}
                 </h2>
-                <div className="space-y-5 text-muted-foreground text-lg leading-relaxed">
+                <div className="space-y-6 text-muted-foreground text-lg leading-relaxed text-left max-w-2xl mx-auto">
                   {founderText.split("\\n\\n").map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>
-                <div className="mt-8 text-sm font-semibold text-primary">
+                <div className="mt-10 text-base font-semibold text-primary">
                   {founder?.name || "Founder"} — {founder?.role || "Scalific Founder"}
                 </div>
               </motion.div>
@@ -739,7 +730,7 @@ export default function Home() {
         </section>
 
         {/* Testimonials */}
-        <section className="py-32 bg-emerald-50/80 border-y border-emerald-100 overflow-hidden">
+        <section className="py-32 bg-primary-light/80 border-y border-primary-border-light overflow-hidden">
           <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -756,7 +747,7 @@ export default function Home() {
               </h2>
             </motion.div>
 
-            <div className="border-t border-emerald-200/70 pt-14">
+            <div className="border-t border-primary-border-light/70 pt-14">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
                 {visibleTestimonials.map((testimonial, index) => (
                   <motion.div
@@ -790,7 +781,7 @@ export default function Home() {
                   variant="outline"
                   size="icon"
                   onClick={goToPreviousTestimonial}
-                  className="h-12 w-12 rounded-full bg-white border-emerald-100 shadow-sm"
+                  className="h-12 w-12 rounded-full bg-white border-primary-border-light shadow-sm"
                   aria-label="Previous testimonial"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -804,7 +795,7 @@ export default function Home() {
                       onClick={() => setTestimonialIndex(index)}
                       aria-label={`Show testimonial ${index + 1}`}
                       className={`h-3 rounded-full transition-all ${
-                        index === testimonialIndex ? "w-8 bg-primary" : "w-3 bg-emerald-200"
+                        index === testimonialIndex ? "w-8 bg-primary" : "w-3 bg-primary-via"
                       }`}
                     />
                   ))}
@@ -814,7 +805,7 @@ export default function Home() {
                   variant="outline"
                   size="icon"
                   onClick={goToNextTestimonial}
-                  className="h-12 w-12 rounded-full bg-white border-emerald-100 shadow-sm"
+                  className="h-12 w-12 rounded-full bg-white border-primary-border-light shadow-sm"
                   aria-label="Next testimonial"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -909,19 +900,19 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-950 py-16 border-t border-gray-800">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 mb-12">
-            <div>
-              <img src={finalFooterLogo} alt="Scalific" className="h-12 md:h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-all" />
-              <p className="mt-5 text-sm text-gray-400 max-w-sm leading-relaxed">
+          <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 mb-12 text-center md:text-left">
+            <div className="flex flex-col items-center md:items-start">
+              <img src={finalFooterLogo} alt="Scalific" className="h-12 md:h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-all mx-auto md:mx-0" />
+              <p className="mt-5 text-sm text-gray-400 max-w-sm leading-relaxed mx-auto md:mx-0">
                 {footerDescription}
               </p>
             </div>
 
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerServicesHeading}</h3>
-              <div className="space-y-3 text-sm text-gray-400">
+              <div className="space-y-3 text-sm text-gray-400 flex flex-col items-center md:items-start">
                 {services.slice(0, 4).map((service) => (
-                  <button key={service.id} onClick={() => scrollTo("services")} className="block hover:text-white transition-colors text-left">
+                  <button key={service.id} onClick={() => scrollTo("services")} className="hover:text-white transition-colors text-center md:text-left">
                     {service.title}
                   </button>
                 ))}
@@ -930,28 +921,23 @@ export default function Home() {
 
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerCompanyHeading}</h3>
-              <div className="space-y-3 text-sm text-gray-400">
+              <div className="space-y-3 text-sm text-gray-400 flex flex-col items-center md:items-start">
                 {footerCompanyLinks.map((item) => (
-                  <button key={item} onClick={() => scrollTo(item === "Results" ? "services" : item.toLowerCase())} className="block hover:text-white transition-colors text-left">
+                  <button key={item} onClick={() => scrollTo(item === "Results" ? "services" : item.toLowerCase())} className="hover:text-white transition-colors text-center md:text-left">
                     {item}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
+            <div className="flex flex-col items-center md:items-start">
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerCtaHeading}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed mb-4">{footerCtaText}</p>
-              <Button onClick={() => scrollTo("contact")} className="w-full">{footerCtaButton}</Button>
+              <p className="text-sm text-gray-400 leading-relaxed mb-4 max-w-sm mx-auto md:mx-0">{footerCtaText}</p>
+              <Button onClick={() => scrollTo("contact")} className="w-full max-w-xs md:max-w-none">{footerCtaButton}</Button>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/10 text-sm text-gray-400">
+          <div className="pt-8 border-t border-white/10 text-sm text-gray-400 text-center">
             <p>&copy; {new Date().getFullYear()} {footerCopyright}</p>
-            <div className="flex gap-6 mt-4 md:mt-0">
-              {footerLegalLinks.map((link) => (
-                <a key={link} href="#" className="hover:text-white transition-colors">{link}</a>
-              ))}
-            </div>
           </div>
         </div>
       </footer>

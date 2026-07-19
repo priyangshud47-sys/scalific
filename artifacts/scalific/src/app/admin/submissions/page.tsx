@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminSubmissions from "@/pages/admin/Submissions";
+import AdminSubmissions from "@/views/admin/Submissions";
 
 export default function AdminSubmissionsPage() {
   return (

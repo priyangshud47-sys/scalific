@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminTestimonials from "@/pages/admin/Testimonials";
+import AdminTestimonials from "@/views/admin/Testimonials";
 
 export default function AdminTestimonialsPage() {
   return (

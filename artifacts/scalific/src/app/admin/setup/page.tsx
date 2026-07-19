@@ -1,5 +1,5 @@
 import AdminShell from "../AdminShell";
-import AdminSetup from "@/pages/admin/Setup";
+import AdminSetup from "@/views/admin/Setup";
 
 export default function AdminSetupPage() {
   return (

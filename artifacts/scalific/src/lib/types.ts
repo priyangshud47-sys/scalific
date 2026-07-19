@@ -261,6 +261,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_permissions: {
+        Row: {
+          id: string;
+          user_email: string;
+          role_title: string;
+          is_super_admin: boolean;
+          allowed_sections: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_email: string;
+          role_title?: string;
+          is_super_admin?: boolean;
+          allowed_sections?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_email?: string;
+          role_title?: string;
+          is_super_admin?: boolean;
+          allowed_sections?: string[];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      activity_logs: {
+        Row: {
+          id: string;
+          user_email: string;
+          action: string;
+          module: string;
+          details: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_email: string;
+          action: string;
+          module: string;
+          details?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_email?: string;
+          action?: string;
+          module?: string;
+          details?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      permission_requests: {
+        Row: {
+          id: string;
+          requested_by: string;
+          request_type: string;
+          target_email: string;
+          payload: Record<string, any>;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          requested_by: string;
+          request_type: string;
+          target_email: string;
+          payload: Record<string, any>;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          requested_by?: string;
+          request_type?: string;
+          target_email?: string;
+          payload?: Record<string, any>;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

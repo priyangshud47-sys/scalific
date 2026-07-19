@@ -217,10 +217,10 @@ INSERT INTO site_settings (key, value) VALUES
   ('seo_og_title', 'Scalific'),
   ('seo_og_description', 'Premium digital growth agency website.'),
   ('seo_og_image', NULL),
-  ('geo_region', NULL),
-  ('geo_placename', NULL),
-  ('geo_position', NULL),
-  ('geo_icbm', NULL)
+  ('geo_ai_summary', NULL),
+  ('geo_semantic_keywords', NULL),
+  ('geo_json_ld_schema', NULL),
+  ('geo_crawlers_policy', NULL)
 ON CONFLICT (key) DO NOTHING;
 
 -- Default contact form fields
