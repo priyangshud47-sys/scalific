@@ -50,7 +50,7 @@ export interface ContactFormField {
 
 export interface ContactSubmission {
   id: string;
-  data: Record<string, string>;
+  data: Record<string, any>;
   submitted_at: string;
 }
 
@@ -213,17 +213,17 @@ export type Database = {
       contact_submissions: {
         Row: {
           id: string;
-          data: Record<string, string>;
+          data: Record<string, any>;
           submitted_at: string;
         };
         Insert: {
           id?: string;
-          data: Record<string, string>;
+          data: Record<string, any>;
           submitted_at?: string;
         };
         Update: {
           id?: string;
-          data?: Record<string, string>;
+          data?: Record<string, any>;
           submitted_at?: string;
         };
         Relationships: [];
