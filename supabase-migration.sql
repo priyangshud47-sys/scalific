@@ -293,9 +293,9 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO contact_form_fields (field_label, field_name, field_type, is_required, display_order) VALUES
   ('Full Name',    'name',    'text',     true,  0),
   ('Email Address','email',   'email',    true,  1),
-  ('Phone Number', 'phone',   'phone',    false, 2),
-  ('Message',      'message', 'textarea', true,  3)
+  ('Phone Number', 'phone',   'phone',    false, 2)
 ON CONFLICT DO NOTHING;
+DELETE FROM contact_form_fields WHERE field_name = 'message' OR LOWER(field_label) = 'message';
 
 INSERT INTO services (title, description, display_order) VALUES
   ('Brand Strategy',       'We craft compelling brand identities that resonate with your target audience and differentiate you in the market.',              0),

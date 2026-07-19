@@ -99,7 +99,12 @@ export default function Home() {
 
         if (servicesRes.data) setServices(servicesRes.data);
         if (teamRes.data) setTeamMembers(teamRes.data);
-        if (fieldsRes.data) setContactFields(fieldsRes.data);
+        if (fieldsRes.data) {
+          const cleanFields = fieldsRes.data.filter(
+            (f) => f.field_name !== "message" && f.field_label.toLowerCase() !== "message"
+          );
+          setContactFields(cleanFields);
+        }
         if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
         
         if (contentRes.data) {
