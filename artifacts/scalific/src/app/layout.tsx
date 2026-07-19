@@ -7,7 +7,12 @@ export const metadata: Metadata = {
   title: "Scalific",
   description: "Premium digital growth agency website.",
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/assets/scalific-logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 

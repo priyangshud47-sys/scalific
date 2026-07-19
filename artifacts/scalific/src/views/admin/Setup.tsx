@@ -321,9 +321,10 @@ INSERT INTO site_settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO contact_form_fields (field_label, field_name, field_type, is_required, display_order) VALUES
-  ('Full Name',     'name',    'text',     true,  0),
-  ('Email Address', 'email',   'email',    true,  1),
-  ('Phone Number',  'phone',   'phone',    false, 2)
+  ('Full Name',     'name',         'text',     true,  0),
+  ('Email Address', 'email',        'email',    true,  1),
+  ('Phone Number',  'phone',        'phone',    false, 2),
+  ('Requirements',  'requirements', 'textarea', true,  3)
 ON CONFLICT DO NOTHING;
 DELETE FROM contact_form_fields WHERE field_name = 'message' OR LOWER(field_label) = 'message';
 

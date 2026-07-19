@@ -103,6 +103,20 @@ export default function Home() {
           const cleanFields = fieldsRes.data.filter(
             (f) => f.field_name !== "message" && f.field_label.toLowerCase() !== "message"
           );
+          const hasReq = cleanFields.some(
+            (f) => f.field_name === "requirements" || f.field_label.toLowerCase() === "requirements"
+          );
+          if (!hasReq) {
+            cleanFields.push({
+              id: "default-req",
+              field_label: "Requirements",
+              field_name: "requirements",
+              field_type: "textarea",
+              is_required: true,
+              options: null,
+              display_order: 3,
+            });
+          }
           setContactFields(cleanFields);
         }
         if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
