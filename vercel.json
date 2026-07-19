@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm --filter @workspace/scalific run build",
+  "outputDirectory": "artifacts/scalific/.next",
+  "installCommand": "pnpm install"
+}
