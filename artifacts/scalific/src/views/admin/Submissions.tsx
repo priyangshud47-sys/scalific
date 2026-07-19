@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, Inbox, Calendar, Filter, RefreshCw, CheckCircle2, PhoneCall, Trash2, ShieldAlert, Loader2 } from "lucide-react";
+import { Download, Inbox, Calendar, Filter, RefreshCw, CheckCircle2, PhoneCall, Trash2, ShieldAlert, Loader2, CalendarClock, MessageSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isYesterday, subDays, startOfDay } from "date-fns";
 import { logActivity } from "@/lib/logger";
@@ -21,8 +22,15 @@ export default function AdminSubmissions() {
   const [customDate, setCustomDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  // Status Change Dialog State
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedSubForStatus, setSelectedSubForStatus] = useState<ContactSubmission | null>(null);
+  const [statusChoice, setStatusChoice] = useState<"CALLED" | "FOLLOW_UP" | "PENDING">("CALLED");
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -39,7 +47,14 @@ export default function AdminSubmissions() {
       const keys = new Set<string>();
       data?.forEach(sub => {
         Object.keys(sub.data || {}).forEach(key => {
-          if (key !== "status" && key !== "is_called" && key !== "called_at" && key !== "called_by") {
+          if (
+            key !== "status" &&
+            key !== "is_called" &&
+            key !== "called_at" &&
+            key !== "called_by" &&
+            key !== "follow_up_note" &&
+            key !== "follow_up_at"
+          ) {
             keys.add(key);
           }
         });
@@ -77,8 +92,7 @@ export default function AdminSubmissions() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = filteredSubmissions.map((sub) => sub.id);
-      setSelectedIds(allIds);
+      setSelectedIds(filteredSubmissions.map((sub) => sub.id));
     } else {
       setSelectedIds([]);
     }
@@ -92,29 +106,44 @@ export default function AdminSubmissions() {
     }
   };
 
-  const isCalled = (sub: ContactSubmission) => {
-    return sub.data?.status === "CALLED" || sub.data?.is_called === true;
+  const getStatus = (sub: ContactSubmission): "CALLED" | "FOLLOW_UP" | "PENDING" => {
+    if (sub.data?.status === "CALLED" || sub.data?.is_called === true) return "CALLED";
+    if (sub.data?.status === "FOLLOW_UP") return "FOLLOW_UP";
+    return "PENDING";
+  };
+
+  const isProcessed = (sub: ContactSubmission) => {
+    const s = getStatus(sub);
+    return s === "CALLED" || s === "FOLLOW_UP";
   };
 
   const getSubEmailOrName = (sub: ContactSubmission) => {
     return sub.data?.email || sub.data?.name || sub.data?.phone || `ID: ${sub.id.substring(0, 8)}`;
   };
 
-  // Toggle Mark Done / Client Called for single submission
-  const toggleMarkDone = async (sub: ContactSubmission) => {
-    setTogglingId(sub.id);
-    const currentlyCalled = isCalled(sub);
-    const newStatus = currentlyCalled ? "PENDING" : "CALLED";
+  const openStatusDialog = (sub: ContactSubmission) => {
+    setSelectedSubForStatus(sub);
+    setStatusChoice(getStatus(sub));
+    setFollowUpNote(sub.data?.follow_up_note || "");
+    setStatusDialogOpen(true);
+  };
+
+  const handleSaveStatus = async () => {
+    if (!selectedSubForStatus) return;
+    setSavingStatus(true);
+    const sub = selectedSubForStatus;
     const subIdentifier = getSubEmailOrName(sub);
 
     const updatedData = {
       ...sub.data,
-      status: newStatus,
-      is_called: newStatus === "CALLED",
-      called_at: newStatus === "CALLED" ? new Date().toISOString() : null,
+      status: statusChoice,
+      is_called: statusChoice === "CALLED",
+      called_at: statusChoice === "CALLED" ? new Date().toISOString() : sub.data?.called_at || null,
+      follow_up_note: statusChoice === "FOLLOW_UP" ? followUpNote.trim() : null,
+      follow_up_at: statusChoice === "FOLLOW_UP" ? new Date().toISOString() : null,
     };
 
-    // Optimistic UI state update immediately
+    // Optimistic UI state update
     setSubmissions((prev) =>
       prev.map((s) => (s.id === sub.id ? { ...s, data: updatedData } : s))
     );
@@ -124,18 +153,26 @@ export default function AdminSubmissions() {
       .update({ data: updatedData })
       .eq("id", sub.id);
 
-    setTogglingId(null);
+    setSavingStatus(false);
+    setStatusDialogOpen(false);
 
     if (error) {
       toast.error(`Failed to update status: ${error.message}`);
-      fetchSubmissions(); // Rollback if DB update fails
+      fetchSubmissions(); // Rollback if DB write fails
     } else {
-      if (newStatus === "CALLED") {
+      if (statusChoice === "CALLED") {
         toast.success(`Marked Done: Client ${subIdentifier} has been called!`);
         await logActivity(
           "UPDATE",
           "Submissions",
           `Marked submission for ${subIdentifier} as Client Called`
+        );
+      } else if (statusChoice === "FOLLOW_UP") {
+        toast.success(`Follow Up Saved for ${subIdentifier}!`);
+        await logActivity(
+          "UPDATE",
+          "Submissions",
+          `Marked submission for ${subIdentifier} for Follow Up (${followUpNote.trim() || "No note"})`
         );
       } else {
         toast.info(`Marked ${subIdentifier} as Pending Contact`);
@@ -148,39 +185,42 @@ export default function AdminSubmissions() {
     }
   };
 
-  // Single Delete Guard: Block deletion unless Marked Done (Client Called)
+  // Single Delete Guard: Block deletion unless Marked Done or Follow Up
   const handleDeleteOne = async (sub: ContactSubmission) => {
     const subIdentifier = getSubEmailOrName(sub);
 
-    // Guard Rule: Cannot delete unless marked done
-    if (!isCalled(sub)) {
+    // Guard Rule: Cannot delete unless marked CALLED or FOLLOW_UP
+    if (!isProcessed(sub)) {
       toast.error(
-        `Cannot delete submission for ${subIdentifier}! You must click "Mark Done (Client Called)" first before deleting.`
+        `Cannot delete submission for ${subIdentifier}! You must mark status as "Client Called" or "Follow Up Needed" first before deleting.`
       );
       return;
     }
 
     if (!confirm(`Are you sure you want to delete submission for ${subIdentifier}?`)) return;
 
+    // Optimistically remove from state immediately so UI updates cleanly without flickering
+    setSubmissions((prev) => prev.filter((s) => s.id !== sub.id));
+    setSelectedIds((prev) => prev.filter((id) => id !== sub.id));
+
     const { error } = await supabase.from("contact_submissions").delete().eq("id", sub.id);
+
     if (error) {
-      toast.error("Failed to delete submission");
+      toast.error(`Failed to delete submission: ${error.message}`);
+      fetchSubmissions(); // Rollback if DB delete fails
     } else {
       toast.success(`Submission for ${subIdentifier} deleted`);
       await logActivity("DELETE", "Submissions", `Deleted submission for ${subIdentifier}`);
-      setSelectedIds((prev) => prev.filter((id) => id !== sub.id));
-      fetchSubmissions();
     }
   };
 
-  // Bulk Delete Guard: Block deletion if ANY selected item is NOT marked done
+  // Bulk Delete Guard: Block deletion if ANY selected item is NOT marked done or follow-up
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
 
     const selectedSubs = submissions.filter((sub) => selectedIds.includes(sub.id));
-    const uncalledSubs = selectedSubs.filter((sub) => !isCalled(sub));
+    const uncalledSubs = selectedSubs.filter((sub) => !isProcessed(sub));
 
-    // Guard Rule Check: If any item is uncalled, block bulk deletion
     if (uncalledSubs.length > 0) {
       const sampleNames = uncalledSubs
         .slice(0, 2)
@@ -188,28 +228,32 @@ export default function AdminSubmissions() {
         .join(", ");
       
       toast.error(
-        `Cannot delete! ${uncalledSubs.length} selected submission(s) (e.g. ${sampleNames}) are NOT marked done (Client Called). Please mark them done first before deleting.`
+        `Cannot delete! ${uncalledSubs.length} selected submission(s) (e.g. ${sampleNames}) are NOT marked done or follow-up. Please mark them done or follow-up first before deleting.`
       );
       return;
     }
 
     if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} selected submission(s)?`)) return;
 
+    // Optimistically remove selected items from UI state immediately
+    setSubmissions((prev) => prev.filter((s) => !selectedIds.includes(s.id)));
+    const idsToDelete = [...selectedIds];
+    setSelectedIds([]);
+
     setBulkProcessing(true);
-    const { error } = await supabase.from("contact_submissions").delete().in("id", selectedIds);
+    const { error } = await supabase.from("contact_submissions").delete().in("id", idsToDelete);
     setBulkProcessing(false);
 
     if (error) {
       toast.error(`Failed to bulk delete submissions: ${error.message}`);
+      fetchSubmissions(); // Rollback on error
     } else {
-      toast.success(`Successfully deleted ${selectedIds.length} submission(s)`);
+      toast.success(`Successfully deleted ${idsToDelete.length} submission(s)`);
       await logActivity(
         "DELETE",
         "Submissions",
-        `Bulk deleted ${selectedIds.length} submission(s)`
+        `Bulk deleted ${idsToDelete.length} submission(s)`
       );
-      setSelectedIds([]);
-      fetchSubmissions();
     }
   };
 
@@ -246,13 +290,46 @@ export default function AdminSubmissions() {
     fetchSubmissions();
   };
 
+  // Bulk Mark Follow Up
+  const handleBulkMarkFollowUp = async () => {
+    if (selectedIds.length === 0) return;
+
+    setBulkProcessing(true);
+    const selectedSubs = submissions.filter((sub) => selectedIds.includes(sub.id));
+
+    let updatedCount = 0;
+    for (const sub of selectedSubs) {
+      const updatedData = {
+        ...sub.data,
+        status: "FOLLOW_UP",
+        is_called: false,
+        follow_up_at: new Date().toISOString(),
+      };
+      const { error } = await supabase
+        .from("contact_submissions")
+        .update({ data: updatedData })
+        .eq("id", sub.id);
+
+      if (!error) updatedCount++;
+    }
+
+    setBulkProcessing(false);
+    toast.success(`Marked ${updatedCount} submission(s) for Follow Up!`);
+    await logActivity(
+      "UPDATE",
+      "Submissions",
+      `Bulk marked ${updatedCount} submission(s) for Follow Up`
+    );
+    fetchSubmissions();
+  };
+
   const exportCSV = () => {
     if (filteredSubmissions.length === 0) {
       toast.error("No submissions to export for selected filter");
       return;
     }
 
-    const headers = ["ID", "Submitted Date", "Submitted Time", "Call Status", ...dynamicKeys];
+    const headers = ["ID", "Submitted Date", "Submitted Time", "Call Status", "Follow Up Notes", ...dynamicKeys];
     
     const rows = filteredSubmissions.map(sub => {
       const subDate = new Date(sub.submitted_at);
@@ -260,7 +337,8 @@ export default function AdminSubmissions() {
         sub.id,
         format(subDate, "yyyy-MM-dd"),
         format(subDate, "HH:mm:ss"),
-        isCalled(sub) ? "CALLED / DONE" : "PENDING",
+        getStatus(sub),
+        `"${String(sub.data?.follow_up_note || "").replace(/"/g, '""')}"`,
         ...dynamicKeys.map(key => {
           const val = sub.data[key] || "";
           return `"${String(val).replace(/"/g, '""')}"`;
@@ -289,7 +367,7 @@ export default function AdminSubmissions() {
         <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">Form Submissions</h1>
           <p className="text-muted-foreground mt-1">
-            Track lead calls, mark client calls as done, and manage submission records safely.
+            Track lead calls, schedule customer follow-ups, and manage submission records.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -355,7 +433,7 @@ export default function AdminSubmissions() {
               <span>{selectedIds.length} submission(s) selected</span>
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -364,7 +442,18 @@ export default function AdminSubmissions() {
                 className="text-xs gap-1.5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 h-8"
               >
                 {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PhoneCall className="w-3.5 h-3.5" />}
-                Mark Selected Called / Done
+                Mark Called / Done
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkMarkFollowUp}
+                disabled={bulkProcessing}
+                className="text-xs gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-500/10 h-8"
+              >
+                {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarClock className="w-3.5 h-3.5" />}
+                Mark Follow Up Needed
               </Button>
 
               <Button
@@ -411,7 +500,7 @@ export default function AdminSubmissions() {
                   />
                 </TableHead>
                 <TableHead className="font-medium min-w-[170px]">Submitted Date & Time</TableHead>
-                <TableHead className="font-medium min-w-[150px]">Client Call Status</TableHead>
+                <TableHead className="font-medium min-w-[180px]">Client Call Status</TableHead>
                 {dynamicKeys.map(key => (
                   <TableHead key={key} className="font-medium whitespace-nowrap">
                     {formatKeyName(key)}
@@ -453,8 +542,9 @@ export default function AdminSubmissions() {
                 </TableRow>
               ) : (
                 filteredSubmissions.map((sub) => {
-                  const called = isCalled(sub);
+                  const status = getStatus(sub);
                   const isSelected = selectedIds.includes(sub.id);
+                  const processed = isProcessed(sub);
 
                   return (
                     <TableRow
@@ -476,26 +566,40 @@ export default function AdminSubmissions() {
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => toggleMarkDone(sub)}
-                          disabled={togglingId === sub.id}
-                          className={`h-7 px-2.5 text-xs font-semibold rounded-full border transition-all ${
-                            called
-                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
-                          }`}
-                        >
-                          {togglingId === sub.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                          ) : called ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                          ) : (
-                            <PhoneCall className="w-3.5 h-3.5 mr-1" />
+                        <div className="flex flex-col gap-1 items-start">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openStatusDialog(sub)}
+                            disabled={updatingId === sub.id}
+                            className={`h-7 px-2.5 text-xs font-semibold rounded-full border transition-all ${
+                              status === "CALLED"
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20"
+                                : status === "FOLLOW_UP"
+                                ? "bg-blue-500/10 text-blue-600 border-blue-500/30 hover:bg-blue-500/20"
+                                : "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20"
+                            }`}
+                          >
+                            {status === "CALLED" ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                            ) : status === "FOLLOW_UP" ? (
+                              <CalendarClock className="w-3.5 h-3.5 mr-1" />
+                            ) : (
+                              <PhoneCall className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            {status === "CALLED"
+                              ? "Client Called ✓"
+                              : status === "FOLLOW_UP"
+                              ? "Follow Up 📅"
+                              : "Mark Done / Status"}
+                          </Button>
+
+                          {sub.data?.follow_up_note && (
+                            <span className="text-[10px] text-blue-600 font-medium truncate max-w-[160px]" title={sub.data.follow_up_note}>
+                              💬 {sub.data.follow_up_note}
+                            </span>
                           )}
-                          {called ? "Client Called ✓" : "Mark Done (Call)"}
-                        </Button>
+                        </div>
                       </TableCell>
 
                       {dynamicKeys.map((key) => (
@@ -514,17 +618,17 @@ export default function AdminSubmissions() {
                           size="icon"
                           onClick={() => handleDeleteOne(sub)}
                           title={
-                            called
+                            processed
                               ? "Delete Submission"
-                              : "Mark Done (Client Called) first to enable deletion"
+                              : "Mark Done (Client Called / Follow Up) first to enable deletion"
                           }
                           className={`h-8 w-8 ${
-                            called
+                            processed
                               ? "text-destructive hover:bg-destructive/10"
                               : "text-muted-foreground/40 hover:text-destructive/50"
                           }`}
                         >
-                          {called ? <Trash2 className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4 text-amber-500/70" />}
+                          {processed ? <Trash2 className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4 text-amber-500/70" />}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -535,6 +639,99 @@ export default function AdminSubmissions() {
           </Table>
         </div>
       </div>
+
+      {/* Status Change Dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PhoneCall className="w-5 h-5 text-primary" />
+              <span>Update Customer Call Status</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSubForStatus && (
+            <div className="space-y-5 pt-3">
+              <div className="p-3 rounded-lg border border-border bg-muted/20 text-xs space-y-1">
+                <p className="font-semibold text-foreground">{getSubEmailOrName(selectedSubForStatus)}</p>
+                <p className="text-muted-foreground">
+                  Submitted: {format(new Date(selectedSubForStatus.submitted_at), "MMM d, yyyy HH:mm")}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                  Select Call Status
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStatusChoice("CALLED")}
+                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center gap-2 transition-all ${
+                      statusChoice === "CALLED"
+                        ? "bg-emerald-500/20 text-emerald-600 border-emerald-500"
+                        : "bg-background border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Client Called ✓</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStatusChoice("FOLLOW_UP")}
+                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center gap-2 transition-all ${
+                      statusChoice === "FOLLOW_UP"
+                        ? "bg-blue-500/20 text-blue-600 border-blue-500"
+                        : "bg-background border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <CalendarClock className="w-5 h-5" />
+                    <span>Follow Up 📅</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStatusChoice("PENDING")}
+                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center gap-2 transition-all ${
+                      statusChoice === "PENDING"
+                        ? "bg-amber-500/20 text-amber-600 border-amber-500"
+                        : "bg-background border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <PhoneCall className="w-5 h-5" />
+                    <span>Pending ⏳</span>
+                  </button>
+                </div>
+              </div>
+
+              {statusChoice === "FOLLOW_UP" && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                    Follow Up Note / Scheduled Time
+                  </label>
+                  <Input
+                    value={followUpNote}
+                    onChange={(e) => setFollowUpNote(e.target.value)}
+                    placeholder="e.g. Call back Friday at 3:00 PM (wants custom quote)"
+                    className="bg-background/50 text-xs"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-border">
+                <Button type="button" variant="outline" onClick={() => setStatusDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveStatus} disabled={savingStatus} className="gap-2">
+                  {savingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {savingStatus ? "Saving..." : "Save Status"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -902,7 +902,7 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 mb-12 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start">
-              <img src={finalFooterLogo} alt="Scalific" className="h-12 md:h-14 w-auto object-contain opacity-80 hover:opacity-100 transition-all mx-auto md:mx-0" />
+              <img src={finalFooterLogo} alt="Scalific" className="h-20 md:h-24 w-auto object-contain opacity-90 hover:opacity-100 transition-all mx-auto md:mx-0" />
               <p className="mt-5 text-sm text-gray-400 max-w-sm leading-relaxed mx-auto md:mx-0">
                 {footerDescription}
               </p>

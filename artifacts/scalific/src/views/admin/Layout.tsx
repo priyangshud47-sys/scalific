@@ -216,7 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-background flex flex-col md:flex-row text-foreground font-sans selection:bg-primary/30">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
-        <img src={logoPath} alt="Scalific" className="h-6 w-auto" />
+        <img src={logoPath} alt="Scalific" className="h-10 w-auto object-contain" />
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -225,7 +225,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </SheetTrigger>
           <SheetContent side="left" className="w-64 bg-card border-r border-border p-0 flex flex-col">
             <div className="p-6 border-b border-border">
-              <img src={logoPath} alt="Scalific" className="h-8 w-auto" />
+              <img src={logoPath} alt="Scalific" className="h-12 w-auto object-contain" />
             </div>
             <div className="flex-1 p-4 overflow-y-auto">
               <NavLinks onClick={() => document.body.click()} />
@@ -245,8 +245,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-72 bg-card border-r border-border min-h-screen fixed left-0 top-0">
-        <div className="p-8 border-b border-border h-[88px] flex items-center">
-          <img src={logoPath} alt="Scalific" className="h-8 w-auto" />
+        <div className="p-6 border-b border-border h-[88px] flex items-center">
+          <img src={logoPath} alt="Scalific" className="h-12 w-auto max-h-12 object-contain" />
         </div>
         <div className="flex-1 p-6 overflow-y-auto">
           <NavLinks />
