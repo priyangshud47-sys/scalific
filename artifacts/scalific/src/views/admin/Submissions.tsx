@@ -114,6 +114,11 @@ export default function AdminSubmissions() {
       called_at: newStatus === "CALLED" ? new Date().toISOString() : null,
     };
 
+    // Optimistic UI state update immediately
+    setSubmissions((prev) =>
+      prev.map((s) => (s.id === sub.id ? { ...s, data: updatedData } : s))
+    );
+
     const { error } = await supabase
       .from("contact_submissions")
       .update({ data: updatedData })
@@ -123,6 +128,7 @@ export default function AdminSubmissions() {
 
     if (error) {
       toast.error(`Failed to update status: ${error.message}`);
+      fetchSubmissions(); // Rollback if DB update fails
     } else {
       if (newStatus === "CALLED") {
         toast.success(`Marked Done: Client ${subIdentifier} has been called!`);
@@ -139,7 +145,6 @@ export default function AdminSubmissions() {
           `Reverted submission for ${subIdentifier} back to Pending`
         );
       }
-      fetchSubmissions();
     }
   };
 
