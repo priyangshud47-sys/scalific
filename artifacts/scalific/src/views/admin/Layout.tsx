@@ -246,14 +246,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex flex-col w-72 bg-card border-r border-border min-h-screen fixed left-0 top-0">
-        <div className="p-6 border-b border-border h-[88px] flex items-center">
+      <div className="hidden md:flex flex-col w-72 bg-card border-r border-border h-screen max-h-screen fixed left-0 top-0 z-30">
+        <div className="p-6 border-b border-border h-[88px] flex items-center shrink-0">
           <img src={logoPath} alt="Scalific" className="h-12 w-auto max-h-12 object-contain" />
         </div>
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-muted">
           <NavLinks />
         </div>
-        <div className="p-6 border-t border-border space-y-4 bg-muted/20">
+        <div className="p-6 border-t border-border space-y-4 bg-muted/20 shrink-0">
           {allowedSections === null && (
             <button
               onClick={() => setRequestModalOpen(true)}
