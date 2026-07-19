@@ -156,6 +156,7 @@ DROP POLICY IF EXISTS "auth_write_testimonials"         ON testimonials;
 DROP POLICY IF EXISTS "public_insert_submissions"       ON contact_submissions;
 DROP POLICY IF EXISTS "auth_read_submissions"           ON contact_submissions;
 DROP POLICY IF EXISTS "auth_write_submissions"          ON contact_submissions;
+DROP POLICY IF EXISTS "auth_delete_submissions"         ON contact_submissions;
 
 DROP POLICY IF EXISTS "public_read_employee_permissions" ON employee_permissions;
 DROP POLICY IF EXISTS "auth_write_employee_permissions"  ON employee_permissions;
@@ -194,6 +195,7 @@ CREATE POLICY "auth_write_testimonials"         ON testimonials        FOR ALL U
 CREATE POLICY "public_insert_submissions"       ON contact_submissions FOR INSERT WITH CHECK (true);
 CREATE POLICY "auth_read_submissions"           ON contact_submissions FOR SELECT USING (true);
 CREATE POLICY "auth_write_submissions"          ON contact_submissions FOR ALL USING (true);
+CREATE POLICY "auth_delete_submissions"         ON contact_submissions FOR DELETE USING (true);
 
 CREATE POLICY "public_read_employee_permissions" ON employee_permissions FOR SELECT USING (true);
 CREATE POLICY "auth_write_employee_permissions"  ON employee_permissions FOR ALL USING (true);

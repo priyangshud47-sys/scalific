@@ -199,17 +199,23 @@ export default function AdminSubmissions() {
 
     if (!confirm(`Are you sure you want to delete submission for ${subIdentifier}?`)) return;
 
-    // Optimistically remove from state immediately so UI updates cleanly without flickering
+    // Optimistically remove from state
     setSubmissions((prev) => prev.filter((s) => s.id !== sub.id));
     setSelectedIds((prev) => prev.filter((id) => id !== sub.id));
 
-    const { error } = await supabase.from("contact_submissions").delete().eq("id", sub.id);
+    const { data, error } = await supabase
+      .from("contact_submissions")
+      .delete()
+      .eq("id", sub.id)
+      .select();
 
-    if (error) {
-      toast.error(`Failed to delete submission: ${error.message}`);
-      fetchSubmissions(); // Rollback if DB delete fails
+    if (error || !data || data.length === 0) {
+      toast.error(
+        `Database blocked deletion! Please go to DB Setup (/admin/setup) and run the updated SQL in your Supabase SQL Editor.`
+      );
+      fetchSubmissions(); // Rollback local state
     } else {
-      toast.success(`Submission for ${subIdentifier} deleted`);
+      toast.success(`Submission for ${subIdentifier} permanently deleted`);
       await logActivity("DELETE", "Submissions", `Deleted submission for ${subIdentifier}`);
     }
   };
@@ -235,24 +241,30 @@ export default function AdminSubmissions() {
 
     if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} selected submission(s)?`)) return;
 
-    // Optimistically remove selected items from UI state immediately
-    setSubmissions((prev) => prev.filter((s) => !selectedIds.includes(s.id)));
+    // Optimistically remove selected items from UI state
     const idsToDelete = [...selectedIds];
+    setSubmissions((prev) => prev.filter((s) => !idsToDelete.includes(s.id)));
     setSelectedIds([]);
 
     setBulkProcessing(true);
-    const { error } = await supabase.from("contact_submissions").delete().in("id", idsToDelete);
+    const { data, error } = await supabase
+      .from("contact_submissions")
+      .delete()
+      .in("id", idsToDelete)
+      .select();
     setBulkProcessing(false);
 
-    if (error) {
-      toast.error(`Failed to bulk delete submissions: ${error.message}`);
-      fetchSubmissions(); // Rollback on error
+    if (error || !data || data.length === 0) {
+      toast.error(
+        `Database blocked bulk deletion! Please go to DB Setup (/admin/setup) and run the updated SQL in your Supabase SQL Editor.`
+      );
+      fetchSubmissions(); // Rollback local state
     } else {
-      toast.success(`Successfully deleted ${idsToDelete.length} submission(s)`);
+      toast.success(`Successfully deleted ${data.length} submission(s) from database`);
       await logActivity(
         "DELETE",
         "Submissions",
-        `Bulk deleted ${idsToDelete.length} submission(s)`
+        `Bulk deleted ${data.length} submission(s)`
       );
     }
   };
