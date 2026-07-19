@@ -436,23 +436,8 @@ export default function AdminSetup() {
     checkTables();
     fetchCredentials();
 
-    supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user.email || null;
-      if (email) {
-        supabase
-          .from("employee_permissions")
-          .select("is_super_admin")
-          .eq("user_email", email.toLowerCase())
-          .maybeSingle()
-          .then(({ data: permData }) => {
-            if (!permData || permData.is_super_admin) {
-              setIsUnlocked(true);
-            }
-          });
-      } else {
-        setIsUnlocked(true);
-      }
-    });
+    // Database setup contains sensitive credentials (service role keys). Requires password verification.
+    setIsUnlocked(false);
   }, []);
 
   const handleVerifyPassword = async (e: React.FormEvent) => {
