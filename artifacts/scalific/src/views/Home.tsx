@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { applyBrandColor } from "@/lib/brandColor";
+import SitePreloader from "@/components/SitePreloader";
 
 const logoPath = "/assets/scalific-logo.png";
 const getBlockContent = (blocks: Record<string, ContentBlock>, key: string, fallback: string) => {
@@ -154,19 +155,6 @@ export default function Home() {
       el.scrollIntoView({ behavior: "smooth" });
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-8">
-        <Skeleton className="h-12 w-48" />
-        <div className="space-y-4 max-w-2xl w-full px-4">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-5/6" />
-          <Skeleton className="h-8 w-4/6" />
-        </div>
-      </div>
-    );
-  }
 
   const heroBadge        = getBlockContent(contentBlocks, "hero_badge", "PREMIUM DIGITAL AGENCY");
   const heroTitle        = getBlockContent(contentBlocks, "hero_title", "Data-Driven Strategy.\\nRelentless Execution.");
@@ -331,6 +319,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
+      <SitePreloader isLoading={loading} />
+
       <motion.div
         style={{ scaleX: scrollProgress }}
         className="fixed top-0 left-0 right-0 h-1 origin-left bg-gradient-to-r from-primary via-primary-via to-primary-dark z-[60]"
