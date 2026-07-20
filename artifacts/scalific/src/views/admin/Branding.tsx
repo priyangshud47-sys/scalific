@@ -9,8 +9,9 @@ import { Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 const defaultHeaderLogoPath = "/assets/scalific-logo.png";
 const defaultFooterLogoPath = "/assets/scalific-footer-logo.svg";
 const defaultFaviconPath = "/favicon.svg";
+const defaultPreloaderPath = "/assets/scalific-icon.svg";
 
-type LogoSlot = "header" | "footer" | "favicon";
+type LogoSlot = "header" | "footer" | "favicon" | "preloader";
 
 type LogoConfig = {
   bucketPrefix: string;
@@ -46,6 +47,14 @@ const logoConfigs: Record<LogoSlot, LogoConfig> = {
     previewLabel: "Browser Icon",
     title: "Favicon",
   },
+  preloader: {
+    bucketPrefix: "preloader_logo",
+    description: "Displayed in the initial site loading screen animation.",
+    defaultPath: defaultPreloaderPath,
+    key: "preloader_logo_url",
+    previewLabel: "Preloader Icon",
+    title: "Preloader Logo Icon",
+  },
 };
 
 export default function AdminBranding() {
@@ -53,24 +62,27 @@ export default function AdminBranding() {
     header: null,
     footer: null,
     favicon: null,
+    preloader: null,
   });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<Record<LogoSlot, boolean>>({
     header: false,
     footer: false,
     favicon: false,
+    preloader: false,
   });
 
   const headerFileInputRef = useRef<HTMLInputElement>(null);
   const footerFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
+  const preloaderFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSettings = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("site_settings")
       .select("*")
-      .in("key", [logoConfigs.header.key, logoConfigs.footer.key, logoConfigs.favicon.key]);
+      .in("key", [logoConfigs.header.key, logoConfigs.footer.key, logoConfigs.favicon.key, logoConfigs.preloader.key]);
 
     if (error) {
       toast.error("Failed to load logo settings");
@@ -78,11 +90,12 @@ export default function AdminBranding() {
       return;
     }
 
-    const nextLogos: Record<LogoSlot, string | null> = { header: null, footer: null, favicon: null };
+    const nextLogos: Record<LogoSlot, string | null> = { header: null, footer: null, favicon: null, preloader: null };
     data?.forEach((setting) => {
       if (setting.key === logoConfigs.header.key) nextLogos.header = setting.value;
       if (setting.key === logoConfigs.footer.key) nextLogos.footer = setting.value;
       if (setting.key === logoConfigs.favicon.key) nextLogos.favicon = setting.value;
+      if (setting.key === logoConfigs.preloader.key) nextLogos.preloader = setting.value;
     });
     setLogos(nextLogos);
     setLoading(false);
@@ -95,6 +108,7 @@ export default function AdminBranding() {
   const getInputRef = (slot: LogoSlot) => {
     if (slot === "header") return headerFileInputRef;
     if (slot === "footer") return footerFileInputRef;
+    if (slot === "preloader") return preloaderFileInputRef;
     return faviconFileInputRef;
   };
 
@@ -266,6 +280,7 @@ export default function AdminBranding() {
 
       {renderLogoPanel("header")}
       {renderLogoPanel("footer")}
+      {renderLogoPanel("preloader")}
       {renderLogoPanel("favicon")}
     </div>
   );

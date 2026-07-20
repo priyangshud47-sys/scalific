@@ -5,10 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface SitePreloaderProps {
   isLoading: boolean;
+  logoUrl?: string | null;
+  brandColor?: string | null;
 }
 
-export default function SitePreloader({ isLoading }: SitePreloaderProps) {
+export default function SitePreloader({ isLoading, logoUrl, brandColor }: SitePreloaderProps) {
   const [progress, setProgress] = useState(15);
+  const activeColor = brandColor || "#22C55E";
+  const activeLogo = logoUrl || "/assets/scalific-icon.svg";
 
   useEffect(() => {
     if (!isLoading) {
@@ -39,8 +43,11 @@ export default function SitePreloader({ isLoading }: SitePreloaderProps) {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0B0F17] text-white overflow-hidden select-none font-sans"
         >
-          {/* Subtle Ambient Glowing Background Orbs */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+          {/* Dynamic Ambient Glowing Background Orb */}
+          <div
+            style={{ backgroundColor: activeColor }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-15 blur-[120px] pointer-events-none transition-colors duration-500"
+          />
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-15 pointer-events-none mix-blend-overlay" />
 
           <div className="relative z-10 flex flex-col items-center space-y-8 max-w-xs text-center px-4">
@@ -48,23 +55,25 @@ export default function SitePreloader({ isLoading }: SitePreloaderProps) {
             <div className="relative flex items-center justify-center">
               {/* Outer Pulse Glow Ring */}
               <motion.div
+                style={{ backgroundColor: activeColor }}
                 animate={{
                   scale: [1, 1.25, 1],
-                  opacity: [0.3, 0.7, 0.3],
+                  opacity: [0.25, 0.6, 0.25],
                 }}
                 transition={{
                   duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute w-28 h-28 rounded-3xl bg-emerald-500/20 blur-xl"
+                className="absolute w-28 h-28 rounded-3xl blur-xl transition-colors duration-500"
               />
 
-              {/* Spinning Subtle Border Highlight */}
+              {/* Spinning Dynamic Border Highlight */}
               <motion.div
+                style={{ borderColor: `${activeColor}66` }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute w-24 h-24 rounded-3xl border border-emerald-500/30"
+                className="absolute w-24 h-24 rounded-3xl border transition-colors duration-500"
               />
 
               {/* Logo Card */}
@@ -77,12 +86,13 @@ export default function SitePreloader({ isLoading }: SitePreloaderProps) {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="relative w-20 h-20 rounded-2xl bg-white p-2 shadow-2xl shadow-emerald-500/30 flex items-center justify-center border border-white/20"
+                className="relative w-20 h-20 rounded-2xl bg-white p-2.5 shadow-2xl flex items-center justify-center border border-white/20 overflow-hidden"
               >
                 <img
-                  src="/assets/scalific-icon.svg"
-                  alt="Scalific"
+                  src={activeLogo}
+                  alt="Scalific Preloader Logo"
                   className="w-full h-full object-contain"
+                  decoding="async"
                 />
               </motion.div>
             </div>
@@ -92,7 +102,10 @@ export default function SitePreloader({ isLoading }: SitePreloaderProps) {
               <h2 className="text-xl font-display font-bold tracking-[0.2em] text-white uppercase">
                 SCALIFIC
               </h2>
-              <p className="text-[11px] font-medium tracking-widest text-emerald-400 uppercase">
+              <p
+                style={{ color: activeColor }}
+                className="text-[11px] font-medium tracking-widest uppercase transition-colors duration-500"
+              >
                 Digital Growth Agency
               </p>
             </div>
@@ -104,12 +117,16 @@ export default function SitePreloader({ isLoading }: SitePreloaderProps) {
                   initial={{ width: "15%" }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full shadow-[0_0_12px_rgba(34,197,94,0.8)]"
+                  style={{
+                    background: `linear-gradient(to right, ${activeColor}, ${activeColor}dd)`,
+                    boxShadow: `0 0 12px ${activeColor}`,
+                  }}
+                  className="h-full rounded-full transition-all duration-300"
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 px-0.5">
                 <span>Loading system...</span>
-                <span>{progress}%</span>
+                <span style={{ color: activeColor }}>{progress}%</span>
               </div>
             </div>
           </div>

@@ -60,6 +60,8 @@ export default function Home() {
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [footerLogoUrl, setFooterLogoUrl] = useState<string | null>(null);
+  const [preloaderLogoUrl, setPreloaderLogoUrl] = useState<string | null>(null);
+  const [brandColor, setBrandColor] = useState<string | null>(null);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -133,10 +135,15 @@ export default function Home() {
         if (settingsRes.data) {
           const logoSetting = settingsRes.data.find((s: SiteSetting) => s.key === "logo_url");
           const footerLogoSetting = settingsRes.data.find((s: SiteSetting) => s.key === "footer_logo_url");
+          const preloaderLogoSetting = settingsRes.data.find((s: SiteSetting) => s.key === "preloader_logo_url");
           const colorSetting = settingsRes.data.find((s: SiteSetting) => s.key === "color_primary");
           if (logoSetting?.value) setLogoUrl(logoSetting.value);
           if (footerLogoSetting?.value) setFooterLogoUrl(footerLogoSetting.value);
-          if (colorSetting?.value) applyBrandColor(colorSetting.value);
+          if (preloaderLogoSetting?.value) setPreloaderLogoUrl(preloaderLogoSetting.value);
+          if (colorSetting?.value) {
+            setBrandColor(colorSetting.value);
+            applyBrandColor(colorSetting.value);
+          }
         }
       } catch (error) {
         console.error("Error fetching data", error);
@@ -319,7 +326,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
-      <SitePreloader isLoading={loading} />
+      <SitePreloader isLoading={loading} logoUrl={preloaderLogoUrl || logoUrl} brandColor={brandColor} />
 
       <motion.div
         style={{ scaleX: scrollProgress }}
