@@ -45,25 +45,24 @@ function setCanonical(value?: string | null) {
   tag.href = value;
 }
 
-function setFavicon(value?: string | null) {
-  const hrefValue = value || "/favicon.svg";
+function setFavicon(value?: string | null, primaryColor?: string | null) {
+  let hrefValue = value;
+
+  if (!hrefValue) {
+    const brandColor = primaryColor || "#22C55E";
+    const svgString = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="512" height="512" rx="100" fill="#0F172A"/><path d="M350 142H205C163.579 142 130 175.579 130 217C130 258.421 163.579 292 205 292H307C348.421 292 382 325.579 382 367C382 408.421 348.421 442 307 442H160" stroke="${encodeURIComponent(brandColor)}" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/><circle cx="370" cy="142" r="32" fill="${encodeURIComponent(brandColor)}"/></svg>`;
+    hrefValue = `data:image/svg+xml;utf8,${svgString}`;
+  }
+
   const existingIcons = document.head.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="shortcut icon"]');
-  
+
   if (existingIcons.length > 0) {
     existingIcons.forEach((icon) => {
-      icon.href = hrefValue;
-      if (hrefValue.endsWith(".svg")) {
-        icon.type = "image/svg+xml";
-      } else {
-        icon.removeAttribute("type");
-      }
+      icon.href = hrefValue!;
     });
   } else {
     const icon = document.createElement("link");
     icon.rel = "icon";
-    if (hrefValue.endsWith(".svg")) {
-      icon.type = "image/svg+xml";
-    }
     icon.href = hrefValue;
     document.head.appendChild(icon);
   }
@@ -136,7 +135,7 @@ export default function SiteMetaSettings() {
         if (settings.color_primary) {
           applyBrandColor(settings.color_primary);
         }
-        setFavicon(settings.favicon_url);
+        setFavicon(settings.favicon_url, settings.color_primary);
         setCanonical(settings.seo_canonical_url);
         setMeta('meta[name="description"]', "name", "description", description);
         setMeta('meta[name="keywords"]', "name", "keywords", settings.seo_keywords);
