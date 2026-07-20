@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
 import "../index.css";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const { data } = await supabase
@@ -18,7 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
         "seo_og_description",
         "seo_og_image",
         "favicon_url",
-        "color_primary"
+        "color_primary",
+        "geo_ai_summary",
+        "geo_semantic_keywords",
+        "geo_crawlers_policy"
       ]);
 
     const settings: Record<string, string> = {};
@@ -41,6 +46,11 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       keywords: settings.seo_keywords ? settings.seo_keywords.split(",").map((k) => k.trim()) : undefined,
       alternates: canonicalUrl ? { canonical: canonicalUrl } : undefined,
+      robots: settings.geo_crawlers_policy || "index, follow",
+      other: {
+        ...(settings.geo_ai_summary ? { "ai-description": settings.geo_ai_summary } : {}),
+        ...(settings.geo_semantic_keywords ? { "ai-keywords": settings.geo_semantic_keywords } : {})
+      },
       icons: {
         icon: [
           { url: faviconUrl, type: faviconUrl.endsWith(".svg") ? "image/svg+xml" : undefined },
@@ -75,10 +85,19 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let jsonLd = null;
+  try {
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "geo_json_ld_schema").single();
+    if (data?.value) jsonLd = data.value;
+  } catch (err) {
+    console.error("Error fetching JSON-LD schema:", err);
+  }
+
   return (
     <html lang="en">
       <body>
+        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
         <SiteMetaSettings />
         {children}
         <Toaster richColors position="top-right" />

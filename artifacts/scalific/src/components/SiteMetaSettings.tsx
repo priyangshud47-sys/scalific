@@ -69,7 +69,7 @@ function setFavicon(value?: string | null, primaryColor?: string | null) {
 }
 
 function setJsonLd(schemaString?: string | null) {
-  const existingScript = document.head.querySelector('script[type="application/ld+json"][data-geo="true"]');
+  const existingScript = document.querySelector('script[type="application/ld+json"][data-geo="true"]');
   if (existingScript) {
     existingScript.remove();
   }
