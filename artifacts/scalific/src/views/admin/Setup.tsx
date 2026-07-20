@@ -394,6 +394,7 @@ export default function AdminSetup() {
     }
   };
 
+  const [accessDenied, setAccessDenied] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [verifyingPassword, setVerifyingPassword] = useState(false);
@@ -443,6 +444,27 @@ export default function AdminSetup() {
 
     // Database setup contains sensitive credentials (service role keys). Requires password verification.
     setIsUnlocked(false);
+
+    // Strict Permission Check against database employee_permissions
+    supabase.auth.getSession().then(({ data }) => {
+      const email = data.session?.user?.email?.toLowerCase();
+      if (email) {
+        supabase
+          .from("employee_permissions")
+          .select("is_super_admin, allowed_sections")
+          .eq("user_email", email)
+          .maybeSingle()
+          .then(({ data: perm }) => {
+            if (perm) {
+              const isSuper = Boolean(perm.is_super_admin);
+              const allowed = Array.isArray(perm.allowed_sections) ? perm.allowed_sections : [];
+              if (!isSuper && !allowed.includes("/admin/setup")) {
+                setAccessDenied(true);
+              }
+            }
+          });
+      }
+    });
   }, []);
 
   const handleVerifyPassword = async (e: React.FormEvent) => {
@@ -540,6 +562,22 @@ export default function AdminSetup() {
   };
 
   const missingCount = Object.values(tableStatus).filter((s) => s === "missing").length;
+
+  if (accessDenied) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4">
+        <div className="bg-card rounded-2xl border border-destructive/30 p-8 shadow-xl text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-destructive">Access Denied</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            You do not have permission to access Database Setup & Supabase Credentials. Please contact a Super Admin to request access.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isUnlocked) {
     return (
