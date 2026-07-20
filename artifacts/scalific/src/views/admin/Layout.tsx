@@ -184,6 +184,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/admin/login");
   };
 
+  // 30-Minute Inactivity Auto-Logout System
+  useEffect(() => {
+    let idleTimer: NodeJS.Timeout;
+    const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes of inactivity
+
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(async () => {
+        toast.warning("Logged out automatically due to 30 minutes of inactivity.");
+        await supabase.auth.signOut();
+        router.push("/admin/login");
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((evt) => window.addEventListener(evt, resetIdleTimer));
+    resetIdleTimer();
+
+    return () => {
+      clearTimeout(idleTimer);
+      events.forEach((evt) => window.removeEventListener(evt, resetIdleTimer));
+    };
+  }, [router]);
+
   const visibleNavItems = navItems.filter((item) => {
     if (!allowedSections) return true;
     return allowedSections.includes(item.href);
