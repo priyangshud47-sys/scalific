@@ -338,7 +338,7 @@ export default function Home() {
       />
 
       {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-white/95 backdrop-blur-md border-b border-border py-4" : "bg-transparent py-6"}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 transform-gpu ${isScrolled ? "bg-white/95 backdrop-blur-md border-b border-border py-4" : "bg-transparent py-6"}`}>
         <div className="container mx-auto px-6 flex items-center justify-between">
           <a href="#" onClick={(e) => { e.preventDefault(); scrollTo("hero"); }} className="relative z-10 flex items-center gap-2 group">
             <img src={finalLogo} alt="Scalific" decoding="async" loading="eager" fetchPriority="high" className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105" />
@@ -396,13 +396,13 @@ export default function Home() {
           <div className="absolute inset-0 z-0">
             <motion.div
               style={{ y: heroGlowY, scale: heroGlowScale }}
-              className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] opacity-60"
+              className="absolute top-1/4 left-1/4 w-[800px] h-[800px] bg-[radial-gradient(circle,hsl(var(--primary)/0.15)_0%,transparent_60%)] rounded-full will-change-transform transform-gpu"
             />
             <motion.div
-              style={{ y: heroGlowY, scale: heroGlowScale }}
-              className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full blur-[150px] opacity-50 bg-[var(--primary-glow)]"
+              style={{ y: heroY }}
+              className="absolute bottom-1/4 right-1/4 w-[1000px] h-[1000px] rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.1)_0%,transparent_60%)] will-change-transform transform-gpu"
             />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] pointer-events-none" />
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] pointer-events-none" />
           </div>
 
           <div className="container mx-auto px-6 relative z-10">
@@ -598,7 +598,7 @@ export default function Home() {
                       transition={{ duration: 0.55, delay: index * 0.1 }}
                       className="relative overflow-hidden rounded-xl bg-[#181B20] p-7 text-white shadow-xl"
                     >
-                      <div className="absolute -right-12 -bottom-12 w-36 h-36 bg-primary/30 rounded-full blur-3xl" />
+                      <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-[radial-gradient(circle,hsl(var(--primary)/0.3)_0%,transparent_70%)] rounded-full" />
                       <div className="relative z-10">
                         <div className="font-display text-4xl font-bold text-primary-via">{stat.value}</div>
                         <p className="text-sm text-white/70 mt-3 leading-relaxed">{stat.label}</p>
@@ -744,7 +744,7 @@ export default function Home() {
                 className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl"
               >
                 <div className="absolute inset-0 bg-[#181B20] flex items-center justify-center">
-                  <div className="absolute w-[800px] h-[800px] bg-primary/20 rounded-full blur-[100px]" />
+                  <div className="absolute w-[1200px] h-[1200px] bg-[radial-gradient(circle,hsl(var(--primary)/0.1)_0%,transparent_60%)] rounded-full pointer-events-none" />
                   <img 
                     src={aboutImageUrl}
                     alt="Abstract team collaboration"
@@ -855,7 +855,7 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="rounded-2xl bg-primary p-8 md:p-10 text-primary-foreground flex flex-col justify-between overflow-hidden relative"
               >
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-3xl" />
+                <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.15)_0%,transparent_70%)] rounded-full pointer-events-none" />
                 <div className="relative z-10">
                   <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
                     {ctaHeading}
@@ -877,7 +877,7 @@ export default function Home() {
 
         {/* Contact Section */}
         <section id="contact" className="py-32 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-primary/5 blur-[150px] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle,hsl(var(--primary)/0.03)_0%,transparent_70%)] pointer-events-none" />
           <div className="container mx-auto px-6 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 36, scale: 0.98 }}
