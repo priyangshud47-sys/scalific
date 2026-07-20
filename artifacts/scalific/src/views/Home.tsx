@@ -139,10 +139,14 @@ export default function Home() {
           const colorSetting = settingsRes.data.find((s: SiteSetting) => s.key === "color_primary");
           if (logoSetting?.value) setLogoUrl(logoSetting.value);
           if (footerLogoSetting?.value) setFooterLogoUrl(footerLogoSetting.value);
-          if (preloaderLogoSetting?.value) setPreloaderLogoUrl(preloaderLogoSetting.value);
+          if (preloaderLogoSetting?.value) {
+            setPreloaderLogoUrl(preloaderLogoSetting.value);
+            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_logo", preloaderLogoSetting.value);
+          }
           if (colorSetting?.value) {
             setBrandColor(colorSetting.value);
             applyBrandColor(colorSetting.value);
+            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_color", colorSetting.value);
           }
         }
       } catch (error) {

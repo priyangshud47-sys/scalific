@@ -11,8 +11,21 @@ interface SitePreloaderProps {
 
 export default function SitePreloader({ isLoading, logoUrl, brandColor }: SitePreloaderProps) {
   const [progress, setProgress] = useState(15);
-  const activeColor = brandColor || "#22C55E";
-  const activeLogo = logoUrl || "/assets/scalific-icon.svg";
+  const [cachedLogo] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("scalific_preloader_logo");
+    }
+    return null;
+  });
+  const [cachedColor] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("scalific_preloader_color");
+    }
+    return null;
+  });
+
+  const activeColor = brandColor || cachedColor || "#22C55E";
+  const activeLogo = logoUrl || cachedLogo || "/assets/scalific-icon.svg";
 
   useEffect(() => {
     if (!isLoading) {
