@@ -145,6 +145,16 @@ export default function AdminBranding() {
       if (dbError) throw dbError;
 
       setLogos((prev) => ({ ...prev, [slot]: publicUrl }));
+      
+      if (typeof window !== "undefined") {
+        if (config.key === "preloader_logo_url") {
+          localStorage.setItem("scalific_preloader_logo", publicUrl);
+        } else if (config.key === "logo_url" && !logos.preloader) {
+          // If updating main logo and no preloader logo exists, cache it for the preloader too
+          localStorage.setItem("scalific_preloader_logo", publicUrl);
+        }
+      }
+
       toast.success(`${config.title} updated successfully`);
     } catch (error) {
       console.error(error);
@@ -173,6 +183,16 @@ export default function AdminBranding() {
       if (error) throw error;
 
       setLogos((prev) => ({ ...prev, [slot]: null }));
+      
+      if (typeof window !== "undefined") {
+        if (config.key === "preloader_logo_url") {
+          localStorage.removeItem("scalific_preloader_logo");
+          // If a main logo exists, we should probably use that, but simple remove is fine
+        } else if (config.key === "logo_url" && !logos.preloader) {
+          localStorage.removeItem("scalific_preloader_logo");
+        }
+      }
+
       toast.success(`${config.title} reset to default`);
     } catch (error) {
       toast.error(`Failed to reset ${config.title.toLowerCase()}`);

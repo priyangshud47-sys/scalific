@@ -142,6 +142,10 @@ export default function Home() {
           if (preloaderLogoSetting?.value) {
             setPreloaderLogoUrl(preloaderLogoSetting.value);
             if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_logo", preloaderLogoSetting.value);
+          } else if (logoSetting?.value) {
+            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_logo", logoSetting.value);
+          } else {
+            if (typeof window !== "undefined") localStorage.removeItem("scalific_preloader_logo");
           }
           if (colorSetting?.value) {
             setBrandColor(colorSetting.value);
