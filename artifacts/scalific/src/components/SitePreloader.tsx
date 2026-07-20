@@ -39,94 +39,75 @@ export default function SitePreloader({ isLoading, logoUrl, brandColor }: SitePr
         <motion.div
           key="site-preloader"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.03, filter: "blur(6px)" }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0B0F17] text-white overflow-hidden select-none font-sans"
+          exit={{ opacity: 0, scale: 1.02, filter: "blur(4px)" }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          style={{ backgroundColor: '#ffffff', color: '#111827' }}
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden select-none font-sans"
         >
-          {/* Dynamic Ambient Glowing Background Orb */}
+          {/* Subtle Ambient Glow */}
           <div
             style={{ backgroundColor: activeColor }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-15 blur-[120px] pointer-events-none transition-colors duration-500"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.03] blur-[80px] pointer-events-none transition-colors duration-500"
           />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-15 pointer-events-none mix-blend-overlay" />
 
-          <div className="relative z-10 flex flex-col items-center space-y-8 max-w-xs text-center px-4">
-            {/* Animated Logo Container */}
-            <div className="relative flex items-center justify-center">
-              {/* Outer Pulse Glow Ring */}
-              <motion.div
-                style={{ backgroundColor: activeColor }}
-                animate={{
-                  scale: [1, 1.25, 1],
-                  opacity: [0.25, 0.6, 0.25],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute w-28 h-28 rounded-3xl blur-xl transition-colors duration-500"
-              />
-
-              {/* Spinning Dynamic Border Highlight */}
-              <motion.div
-                style={{ borderColor: `${activeColor}66` }}
+          <div className="relative z-10 flex flex-col items-center space-y-6 max-w-xs text-center px-4">
+            
+            {/* Animated Circular Loader & Logo */}
+            <div className="relative flex items-center justify-center w-28 h-28">
+              {/* Spinning Round Loader SVG */}
+              <motion.svg
                 animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute w-24 h-24 rounded-3xl border transition-colors duration-500"
-              />
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 w-full h-full"
+                viewBox="0 0 100 100"
+              >
+                {/* Background Track */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="48"
+                  fill="none"
+                  stroke="#F3F4F6"
+                  strokeWidth="2"
+                />
+                {/* Animated colored segment */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="48"
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray="80 250"
+                  className="transition-colors duration-500"
+                />
+              </motion.svg>
 
               {/* Logo Card */}
-              <motion.div
-                animate={{
-                  scale: [1, 1.04, 1],
-                }}
-                transition={{
-                  duration: 1.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="relative w-20 h-20 rounded-2xl bg-white p-2.5 shadow-2xl flex items-center justify-center border border-white/20 overflow-hidden"
-              >
+              <div className="relative w-16 h-16 flex items-center justify-center rounded-xl p-1.5 bg-white shadow-sm border border-gray-100 overflow-hidden z-10">
                 <img
                   src={activeLogo}
                   alt="Scalific Preloader Logo"
                   className="w-full h-full object-contain"
                   decoding="async"
                 />
-              </motion.div>
+              </div>
             </div>
 
-            {/* Brand Title */}
-            <div className="space-y-1">
-              <h2 className="text-xl font-display font-bold tracking-[0.2em] text-white uppercase">
+            {/* Brand Title & Loading Text */}
+            <div className="space-y-2">
+              <h2 className="text-lg font-display font-bold tracking-[0.2em] text-gray-900 uppercase">
                 SCALIFIC
               </h2>
-              <p
-                style={{ color: activeColor }}
-                className="text-[11px] font-medium tracking-widest uppercase transition-colors duration-500"
-              >
-                Digital Growth Agency
-              </p>
-            </div>
-
-            {/* Loading Progress Bar & Percentage */}
-            <div className="w-48 space-y-2">
-              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/5">
-                <motion.div
-                  initial={{ width: "15%" }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  style={{
-                    background: `linear-gradient(to right, ${activeColor}, ${activeColor}dd)`,
-                    boxShadow: `0 0 12px ${activeColor}`,
-                  }}
-                  className="h-full rounded-full transition-all duration-300"
+              <div className="flex items-center justify-center gap-2">
+                <div 
+                  className="w-1.5 h-1.5 rounded-full animate-pulse transition-colors duration-500"
+                  style={{ backgroundColor: activeColor }}
                 />
-              </div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 px-0.5">
-                <span>Loading system...</span>
-                <span style={{ color: activeColor }}>{progress}%</span>
+                <p className="text-[10px] font-medium tracking-wider text-gray-500 uppercase">
+                  Loading system... <span style={{ color: activeColor }} className="transition-colors duration-500">{progress}%</span>
+                </p>
               </div>
             </div>
           </div>
