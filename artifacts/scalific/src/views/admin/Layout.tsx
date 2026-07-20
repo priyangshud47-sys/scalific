@@ -74,6 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [pendingRequests, setPendingRequests] = useState<PermissionRequest[]>([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [processingReqId, setProcessingReqId] = useState<string | null>(null);
+  const [adminLogoUrl, setAdminLogoUrl] = useState<string | null>(null);
 
   const fetchPendingRequests = async () => {
     const { data } = await supabase
@@ -160,12 +161,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     supabase
       .from("site_settings")
-      .select("value")
-      .eq("key", "color_primary")
-      .maybeSingle()
+      .select("key, value")
+      .in("key", ["color_primary", "logo_url"])
       .then(({ data }) => {
-        if (data?.value) {
-          applyBrandColor(data.value);
+        if (data) {
+          const colorSetting = data.find(d => d.key === "color_primary");
+          const logoSetting = data.find(d => d.key === "logo_url");
+          if (colorSetting?.value) {
+            applyBrandColor(colorSetting.value);
+          }
+          if (logoSetting?.value) {
+            setAdminLogoUrl(logoSetting.value);
+          }
         }
       });
   }, []);
@@ -242,7 +249,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-background flex flex-col md:flex-row text-foreground font-sans selection:bg-primary/30">
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
-        <img src={logoPath} alt="Scalific" className="h-10 w-auto object-contain" />
+        <img src={adminLogoUrl || logoPath} alt="Scalific" className="h-10 w-auto object-contain" />
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -251,7 +258,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </SheetTrigger>
           <SheetContent side="left" className="w-64 bg-card border-r border-border p-0 flex flex-col">
             <div className="p-6 border-b border-border">
-              <img src={logoPath} alt="Scalific" className="h-12 w-auto object-contain" />
+              <img src={adminLogoUrl || logoPath} alt="Scalific" className="h-12 w-auto object-contain" />
             </div>
             <div className="flex-1 p-4 overflow-y-auto">
               <NavLinks onClick={() => document.body.click()} />
@@ -272,7 +279,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-72 bg-card border-r border-border h-screen max-h-screen fixed left-0 top-0 z-30">
         <div className="p-6 border-b border-border h-[88px] flex items-center shrink-0">
-          <img src={logoPath} alt="Scalific" className="h-12 w-auto max-h-12 object-contain" />
+          <img src={adminLogoUrl || logoPath} alt="Scalific" className="h-12 w-auto max-h-12 object-contain" />
         </div>
         <div className="flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-muted">
           <NavLinks />

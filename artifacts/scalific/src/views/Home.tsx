@@ -50,7 +50,15 @@ const ServiceIcon = ({ icon, title, className }: { icon: string | null; title: s
   return <IconComponent className={className} />;
 };
 
-export default function Home() {
+export default function Home({ 
+  initialPreloaderLogo, 
+  initialBrandColor,
+  initialLogo
+}: { 
+  initialPreloaderLogo?: string | null, 
+  initialBrandColor?: string | null,
+  initialLogo?: string | null
+}) {
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState<Service[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -58,10 +66,10 @@ export default function Home() {
   const [contactFields, setContactFields] = useState<ContactFormField[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialLogo || null);
   const [footerLogoUrl, setFooterLogoUrl] = useState<string | null>(null);
-  const [preloaderLogoUrl, setPreloaderLogoUrl] = useState<string | null>(null);
-  const [brandColor, setBrandColor] = useState<string | null>(null);
+  const [preloaderLogoUrl, setPreloaderLogoUrl] = useState<string | null>(initialPreloaderLogo || null);
+  const [brandColor, setBrandColor] = useState<string | null>(initialBrandColor || null);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -141,16 +149,10 @@ export default function Home() {
           if (footerLogoSetting?.value) setFooterLogoUrl(footerLogoSetting.value);
           if (preloaderLogoSetting?.value) {
             setPreloaderLogoUrl(preloaderLogoSetting.value);
-            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_logo", preloaderLogoSetting.value);
-          } else if (logoSetting?.value) {
-            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_logo", logoSetting.value);
-          } else {
-            if (typeof window !== "undefined") localStorage.removeItem("scalific_preloader_logo");
           }
           if (colorSetting?.value) {
             setBrandColor(colorSetting.value);
             applyBrandColor(colorSetting.value);
-            if (typeof window !== "undefined") localStorage.setItem("scalific_preloader_color", colorSetting.value);
           }
         }
       } catch (error) {
@@ -334,7 +336,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans">
-      <SitePreloader isLoading={loading} logoUrl={preloaderLogoUrl || logoUrl} brandColor={brandColor} />
+      <SitePreloader isLoading={loading} logoUrl={preloaderLogoUrl || initialPreloaderLogo || logoUrl} brandColor={brandColor || initialBrandColor} />
 
       <motion.div
         style={{ scaleX: scrollProgress }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,21 @@ export default function AdminLogin() {
   const [totpCode, setTotpCode] = useState("");
   const [verifyingTotp, setVerifyingTotp] = useState(false);
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string } | null>(null);
+
+  const [adminLogoUrl, setAdminLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "logo_url")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) {
+          setAdminLogoUrl(data.value);
+        }
+      });
+  }, []);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -108,7 +123,7 @@ export default function AdminLogin() {
       
       <div className="w-full max-w-md relative z-10">
         <div className="flex justify-center mb-8">
-          <img src={logoPath} alt="Scalific" className="h-12 w-auto object-contain" />
+          <img src={adminLogoUrl || logoPath} alt="Scalific" className="h-12 w-auto object-contain" />
         </div>
         
         <Card className="border-border bg-white shadow-2xl overflow-hidden">
