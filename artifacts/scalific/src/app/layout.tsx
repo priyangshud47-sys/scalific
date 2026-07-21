@@ -35,8 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
       });
     }
 
-    const title = settings.seo_title || "Scalific | Premium Digital Agency";
-    const description = settings.seo_description || "Scalific is a premium digital growth agency building high-converting brands, websites, and performance marketing campaigns.";
+    const title = settings.seo_title || "Scalific — Brand & Growth Agency for Startup Founders";
+    const description = settings.seo_description || "Scalific is a premium brand identity & growth marketing agency for startup founders. We build high-converting brands, websites, and performance marketing campaigns.";
     const ogTitle = settings.seo_og_title || title;
     const ogDescription = settings.seo_og_description || description;
     const ogImage = settings.seo_og_image || undefined;
@@ -78,8 +78,8 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch (err) {
     console.error("Error generating dynamic metadata:", err);
     return {
-      title: "Scalific | Premium Digital Agency",
-      description: "Scalific is a premium digital growth agency website.",
+      title: "Scalific — Brand & Growth Agency for Startup Founders",
+      description: "Scalific is a premium brand identity & growth marketing agency for startup founders. We build high-converting brands, websites, and performance marketing campaigns.",
       icons: {
         icon: "/favicon.svg",
       },
@@ -96,10 +96,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     console.error("Error fetching JSON-LD schema:", err);
   }
 
+  const defaultSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Scalific",
+    "url": "https://scalific.in",
+    "logo": "https://scalific.in/assets/scalific-logo.png",
+    "description": "Scalific is a premium brand identity & growth marketing agency for startup founders.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "hello@scalific.in",
+      "contactType": "customer support"
+    }
+  };
+
+  const schemaString = jsonLd || JSON.stringify(defaultSchema);
+
   return (
     <html lang="en">
       <body>
-        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaString }} />
         <SiteMetaSettings />
         {children}
         <Toaster richColors position="top-right" />

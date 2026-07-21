@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { Service, TeamMember, ContentBlock, ContactFormField, SiteSetting, Testimonial } from "@/lib/types";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
@@ -110,26 +111,35 @@ export default function Home({
 
         if (servicesRes.data) setServices(servicesRes.data);
         if (teamRes.data) setTeamMembers(teamRes.data);
-        if (fieldsRes.data) {
-          const cleanFields = fieldsRes.data.filter(
+        let finalFields: ContactFormField[] = [];
+        if (fieldsRes.data && fieldsRes.data.length > 0) {
+          finalFields = fieldsRes.data.filter(
             (f) => f.field_name !== "message" && f.field_label.toLowerCase() !== "message"
           );
-          const hasReq = cleanFields.some(
-            (f) => f.field_name === "requirements" || f.field_label.toLowerCase() === "requirements"
-          );
-          if (!hasReq) {
-            cleanFields.push({
-              id: "default-req",
-              field_label: "Requirements",
-              field_name: "requirements",
-              field_type: "textarea",
-              is_required: true,
-              options: null,
-              display_order: 3,
-            });
-          }
-          setContactFields(cleanFields);
         }
+        
+        if (finalFields.length === 0) {
+           finalFields = [
+             { id: "default-name", field_label: "Name", field_name: "name", field_type: "text", is_required: true, display_order: 1, options: null },
+             { id: "default-email", field_label: "Email", field_name: "email", field_type: "email", is_required: true, display_order: 2, options: null },
+           ];
+        }
+
+        const hasReq = finalFields.some(
+          (f) => f.field_name === "requirements" || f.field_label.toLowerCase() === "requirements"
+        );
+        if (!hasReq) {
+          finalFields.push({
+            id: "default-req",
+            field_label: "Requirements",
+            field_name: "requirements",
+            field_type: "textarea",
+            is_required: true,
+            options: null,
+            display_order: 3
+          });
+        }
+        setContactFields(finalFields);
         if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
         
         if (contentRes.data) {
@@ -179,10 +189,10 @@ export default function Home({
   const heroPrimaryCta   = getBlockContent(contentBlocks, "hero_primary_cta", "Partner With Us");
   const heroSecondaryCta = getBlockContent(contentBlocks, "hero_secondary_cta", "Explore Expertise");
   const navItems = [
-    { label: getBlockContent(contentBlocks, "nav_services_label", "Services"), target: "services" },
-    { label: getBlockContent(contentBlocks, "nav_team_label", "Team"), target: "team" },
-    { label: getBlockContent(contentBlocks, "nav_about_label", "About"), target: "about" },
-    { label: getBlockContent(contentBlocks, "nav_contact_label", "Contact"), target: "contact" },
+    { label: getBlockContent(contentBlocks, "nav_services_label", "Services"), target: "/services" },
+    { label: getBlockContent(contentBlocks, "nav_team_label", "Case Studies"), target: "/case-studies" },
+    { label: getBlockContent(contentBlocks, "nav_about_label", "About"), target: "/about" },
+    { label: getBlockContent(contentBlocks, "nav_contact_label", "Blog"), target: "/blog" },
   ];
   const navCtaLabel = getBlockContent(contentBlocks, "nav_cta_label", "Get Started");
   const aboutText        = getBlockContent(contentBlocks, "about_text", "At Scalific, we combine creative excellence with rigorous data analysis. We are the Formula 1 team for your digital growth, built for founders who demand performance.");
@@ -353,17 +363,17 @@ export default function Home({
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.target}
-                onClick={() => scrollTo(item.target)}
+                href={item.target}
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
-            <Button onClick={() => scrollTo("contact")} className="font-semibold tracking-wide">
+            <Link href="/contact" className="font-semibold tracking-wide inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors">
               {navCtaLabel}
-            </Button>
+            </Link>
           </nav>
 
           {/* Mobile Menu Toggle */}
@@ -380,17 +390,18 @@ export default function Home({
         >
           <nav className="flex flex-col p-6 gap-6 items-center">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.target}
-                onClick={() => scrollTo(item.target)}
+                href={item.target}
+                onClick={() => setMobileMenuOpen(false)}
                 className="text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
-            <Button onClick={() => scrollTo("contact")} className="w-full mt-4">
+            <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="w-full mt-4 h-10 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               {navCtaLabel}
-            </Button>
+            </Link>
           </nav>
         </motion.div>
       </header>
@@ -959,9 +970,9 @@ export default function Home({
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerServicesHeading}</h3>
               <div className="space-y-3 text-sm text-gray-400 flex flex-col items-center md:items-start">
                 {services.slice(0, 4).map((service) => (
-                  <button key={service.id} onClick={() => scrollTo("services")} className="hover:text-white transition-colors text-center md:text-left">
+                  <Link key={service.id} href="/services" className="hover:text-white transition-colors text-center md:text-left">
                     {service.title}
-                  </button>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -969,18 +980,17 @@ export default function Home({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerCompanyHeading}</h3>
               <div className="space-y-3 text-sm text-gray-400 flex flex-col items-center md:items-start">
-                {footerCompanyLinks.map((item) => (
-                  <button key={item} onClick={() => scrollTo(item === "Results" ? "services" : item.toLowerCase())} className="hover:text-white transition-colors text-center md:text-left">
-                    {item}
-                  </button>
-                ))}
+                <Link href="/about" className="hover:text-white transition-colors text-center md:text-left">About</Link>
+                <Link href="/case-studies" className="hover:text-white transition-colors text-center md:text-left">Results</Link>
+                <Link href="/blog" className="hover:text-white transition-colors text-center md:text-left">Blog</Link>
+                <Link href="/contact" className="hover:text-white transition-colors text-center md:text-left">Contact</Link>
               </div>
             </div>
 
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">{footerCtaHeading}</h3>
               <p className="text-sm text-gray-400 leading-relaxed mb-4 max-w-sm mx-auto md:mx-0">{footerCtaText}</p>
-              <Button onClick={() => scrollTo("contact")} className="w-full max-w-xs md:max-w-none">{footerCtaButton}</Button>
+              <Link href="/contact" className="w-full max-w-xs md:max-w-none inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors">{footerCtaButton}</Link>
             </div>
           </div>
           <div className="pt-8 border-t border-white/10 text-sm text-gray-400 text-center">
