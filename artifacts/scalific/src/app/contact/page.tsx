@@ -101,9 +101,9 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-primary/30 selection:text-white pt-24 pb-20 px-6">
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-white transition-colors mb-12">
+        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-12">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
@@ -117,21 +117,21 @@ export default function ContactPage() {
 
             <div className="space-y-6">
               <div className="flex items-center gap-4 text-muted-foreground">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-white">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
                   <Mail className="w-5 h-5" />
                 </div>
-                <span>hello@scalific.in</span>
+                <span className="text-foreground">hello@scalific.in</span>
               </div>
               <div className="flex items-center gap-4 text-muted-foreground">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-white">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
                   <MapPin className="w-5 h-5" />
                 </div>
-                <span>Remote-first, serving clients worldwide.</span>
+                <span className="text-foreground">Remote-first, serving clients worldwide.</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-8 md:p-12 text-black shadow-2xl relative overflow-hidden">
+          <div className="bg-white rounded-3xl p-8 md:p-12 border border-gray-100 shadow-md relative overflow-hidden">
             {isSuccess ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-6 py-12">
                 <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center">

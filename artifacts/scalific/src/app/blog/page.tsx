@@ -30,9 +30,9 @@ export default function BlogPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-primary/30 selection:text-white pt-24 pb-20 px-6">
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-white transition-colors mb-12">
+        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-12">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
@@ -44,14 +44,14 @@ export default function BlogPage() {
 
         <div className="space-y-12">
           {posts.map((post, idx) => (
-            <article key={idx} className="group border-b border-white/10 pb-12 cursor-pointer">
+            <article key={idx} className="group border-b border-border pb-12 cursor-pointer">
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-primary text-sm font-bold tracking-wider uppercase">{post.category}</span>
                 <span className="text-muted-foreground text-sm">{post.date}</span>
               </div>
               <h2 className="text-3xl font-bold mb-4 group-hover:text-primary transition-colors">{post.title}</h2>
               <p className="text-muted-foreground text-lg mb-6">{post.excerpt}</p>
-              <span className="text-white font-medium inline-flex items-center group-hover:text-primary transition-colors">
+              <span className="text-foreground font-medium inline-flex items-center group-hover:text-primary transition-colors">
                 Read Article <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </span>
             </article>

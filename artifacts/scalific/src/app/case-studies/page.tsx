@@ -30,9 +30,9 @@ export default function CaseStudiesPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-primary/30 selection:text-white pt-24 pb-20 px-6">
+    <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-white transition-colors mb-12">
+        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-12">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
@@ -44,23 +44,24 @@ export default function CaseStudiesPage() {
 
         <div className="grid gap-8">
           {caseStudies.map((study, idx) => (
-            <div key={idx} className="group relative bg-white/5 border border-white/10 rounded-2xl p-8 md:p-12 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden">
+            <div key={idx} className="group relative bg-white border border-gray-100 hover:border-primary/40 shadow-sm hover:shadow-md transition-all duration-500 rounded-2xl p-8 md:p-12 cursor-pointer overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                 <div className="max-w-2xl">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-primary text-sm font-bold tracking-wider uppercase">{study.client}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/20"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
                     <div className="flex gap-2">
                       {study.tags.map(tag => (
-                        <span key={tag} className="text-xs px-2 py-1 bg-white/10 rounded-md text-white/70">{tag}</span>
+                        <span key={tag} className="text-xs px-2 py-1 bg-primary/10 rounded-md text-primary">{tag}</span>
                       ))}
                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold mb-4">{study.title}</h3>
+                  <h3 className="text-3xl font-bold mb-4 group-hover:text-primary transition-colors">{study.title}</h3>
                   <p className="text-muted-foreground text-lg">{study.description}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                     <ArrowUpRight className="w-5 h-5" />
                   </div>
                 </div>
@@ -69,7 +70,7 @@ export default function CaseStudiesPage() {
           ))}
         </div>
 
-        <div className="mt-20 text-center border-t border-white/10 pt-16">
+        <div className="mt-20 text-center border-t border-border pt-16">
           <h2 className="text-3xl font-bold mb-6">Ready to be our next success story?</h2>
           <Link href="/contact" className="inline-flex h-14 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">
             Get in touch
