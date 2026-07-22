@@ -68,7 +68,7 @@ export default async function AboutPage() {
           <div className={displayMembers.length === 1 ? "flex justify-center mb-12" : "grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-12"}>
             {displayMembers.map((member) => (
               <div key={member.id} className="flex flex-col items-center text-center p-6 rounded-xl border border-gray-100 bg-white shadow-sm text-foreground max-w-sm w-full">
-                <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border border-gray-200 mb-4 shrink-0">
+                <div className="w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 mb-4 shrink-0">
                   {member.photo_url ? (
                     <img src={member.photo_url} alt={member.name} className="w-full h-full object-cover object-center" />
                   ) : (
