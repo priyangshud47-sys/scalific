@@ -16,18 +16,22 @@ import type { ContactFormField } from "@/lib/types";
 
 export default function ContactPage() {
   const [fields, setFields] = useState<ContactFormField[]>([]);
+  const [contentBlocks, setContentBlocks] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchFields() {
+    async function fetchData() {
       try {
-        const { data } = await supabase.from("contact_form_fields").select("*").order("display_order");
+        const [fieldsRes, blocksRes] = await Promise.all([
+          supabase.from("contact_form_fields").select("*").order("display_order"),
+          supabase.from("content_blocks").select("section_key, content")
+        ]);
         
         let finalFields: ContactFormField[] = [];
-        if (data && data.length > 0) {
-          finalFields = data.filter((f) => f.field_name !== "message" && f.field_label.toLowerCase() !== "message");
+        if (fieldsRes.data && fieldsRes.data.length > 0) {
+          finalFields = fieldsRes.data.filter((f) => f.field_name !== "message" && f.field_label.toLowerCase() !== "message");
         }
         
         if (finalFields.length === 0) {
@@ -52,13 +56,23 @@ export default function ContactPage() {
           });
         }
         setFields(finalFields);
+
+        if (blocksRes.data) {
+          const blocksMap: Record<string, string> = {};
+          blocksRes.data.forEach(block => {
+            if (block.section_key && block.content) {
+              blocksMap[block.section_key] = block.content;
+            }
+          });
+          setContentBlocks(blocksMap);
+        }
       } catch (err) {
-        console.error("Failed to load fields", err);
+        console.error("Failed to load data", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchFields();
+    fetchData();
   }, []);
 
   const schemaObj: Record<string, z.ZodTypeAny> = {};
@@ -100,6 +114,16 @@ export default function ContactPage() {
     }
   };
 
+  const heading = contentBlocks.contact_heading || "Ready to scale?";
+  const subtext = contentBlocks.contact_subtext || "Let's discuss how we can engineer your next phase of growth. Fill out the form, and a partner will be in touch within 24 hours.";
+  const email = contentBlocks.contact_email || "hello@scalific.in";
+  const location = contentBlocks.contact_location || "Remote-first, serving clients worldwide.";
+  const successTitle = contentBlocks.contact_form_success_title || "Message Received";
+  const successMessage = contentBlocks.contact_form_success_message || "Our team will review your inquiry and reach out within 24 hours.";
+  const successButton = contentBlocks.contact_form_success_button || "Send Another Message";
+  const submitLabel = contentBlocks.contact_form_submit_label || "Submit Inquiry";
+  const sendingLabel = contentBlocks.contact_form_sending_label || "Sending...";
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -110,27 +134,27 @@ export default function ContactPage() {
         
         <div className="grid lg:grid-cols-2 gap-16">
           <div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">Ready to scale?</h1>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">{heading}</h1>
             <p className="text-xl text-muted-foreground mb-12">
-              Let's discuss how we can engineer your next phase of growth. Fill out the form, and a partner will be in touch within 24 hours.
+              {subtext}
             </p>
-
+ 
             <div className="space-y-6">
               <div className="flex items-center gap-4 text-muted-foreground">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
                   <Mail className="w-5 h-5" />
                 </div>
-                <span className="text-foreground">hello@scalific.in</span>
+                <span className="text-foreground">{email}</span>
               </div>
               <div className="flex items-center gap-4 text-muted-foreground">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
                   <MapPin className="w-5 h-5" />
                 </div>
-                <span className="text-foreground">Remote-first, serving clients worldwide.</span>
+                <span className="text-foreground">{location}</span>
               </div>
             </div>
           </div>
-
+ 
           <div className="bg-white rounded-3xl p-8 md:p-12 border border-gray-100 shadow-md relative overflow-hidden">
             {isSuccess ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-6 py-12">
@@ -138,10 +162,10 @@ export default function ContactPage() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Message Received</h3>
-                  <p className="text-muted-foreground">Our team will review your inquiry and reach out within 24 hours.</p>
+                  <h3 className="text-2xl font-bold mb-2">{successTitle}</h3>
+                  <p className="text-muted-foreground">{successMessage}</p>
                 </div>
-                <Button variant="outline" onClick={() => setIsSuccess(false)}>Send Another Message</Button>
+                <Button variant="outline" onClick={() => setIsSuccess(false)}>{successButton}</Button>
               </div>
             ) : loading ? (
               <div className="p-8 text-center text-muted-foreground">Loading form...</div>
@@ -180,7 +204,7 @@ export default function ContactPage() {
                     />
                   ))}
                   <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-lg font-semibold tracking-wide">
-                    {isSubmitting ? "Sending..." : "Submit Inquiry"}
+                    {isSubmitting ? sendingLabel : submitLabel}
                   </Button>
                 </form>
               </Form>

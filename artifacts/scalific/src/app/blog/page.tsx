@@ -1,13 +1,33 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export const metadata: Metadata = {
   title: "Blog & Resources — Scalific Digital Agency",
   description: "Insights, guides, and resources on brand strategy, web development, and growth marketing for founders.",
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  // Fetch content blocks from Supabase
+  const contentBlocks: Record<string, string> = {};
+  try {
+    const { data } = await supabase.from("content_blocks").select("section_key, content");
+    if (data) {
+      data.forEach(block => {
+        if (block.section_key && block.content) {
+          contentBlocks[block.section_key] = block.content;
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching content blocks:", error);
+  }
+
   const posts = [
     {
       title: "How much does a website rebuild really cost in 2026?",
@@ -29,6 +49,9 @@ export default function BlogPage() {
     }
   ];
 
+  const pageHeading = contentBlocks.blog_page_heading || "Insights & Resources";
+  const pageText = contentBlocks.blog_page_text || "Tactical advice and deep dives into branding, design, and growth marketing.";
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -37,9 +60,9 @@ export default function BlogPage() {
           Back to Home
         </Link>
         
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">Insights & Resources</h1>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">{pageHeading}</h1>
         <p className="text-xl text-muted-foreground mb-16">
-          Tactical advice and deep dives into branding, design, and growth marketing.
+          {pageText}
         </p>
 
         <div className="space-y-12">

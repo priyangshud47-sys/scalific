@@ -1,13 +1,33 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export const metadata: Metadata = {
   title: "Case Studies — Scalific Digital Agency",
   description: "See how we've helped startups achieve 4.6x organic traffic growth, 63% CPL reduction, and 2.1x conversion rate increases.",
 };
 
-export default function CaseStudiesPage() {
+export default async function CaseStudiesPage() {
+  // Fetch content blocks from Supabase
+  const contentBlocks: Record<string, string> = {};
+  try {
+    const { data } = await supabase.from("content_blocks").select("section_key, content");
+    if (data) {
+      data.forEach(block => {
+        if (block.section_key && block.content) {
+          contentBlocks[block.section_key] = block.content;
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching content blocks:", error);
+  }
+
   const caseStudies = [
     {
       title: "4.6x Organic Traffic Growth",
@@ -29,6 +49,9 @@ export default function CaseStudiesPage() {
     }
   ];
 
+  const pageHeading = contentBlocks.case_studies_heading || "Case Studies";
+  const pageText = contentBlocks.case_studies_subtext || "The numbers behind the launch. See how our integrated strategy, design, and marketing approach drives real business outcomes.";
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -37,9 +60,9 @@ export default function CaseStudiesPage() {
           Back to Home
         </Link>
         
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">Case Studies</h1>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">{pageHeading}</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mb-16">
-          The numbers behind the launch. See how our integrated strategy, design, and marketing approach drives real business outcomes.
+          {pageText}
         </p>
 
         <div className="grid gap-8">

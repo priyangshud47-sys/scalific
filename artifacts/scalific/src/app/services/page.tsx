@@ -32,17 +32,24 @@ const ServiceIcon = ({ icon, title, className }: { icon: string | null; title: s
 };
 
 export default async function ServicesPage() {
-  // Fetch services from Supabase
+  // Fetch services and content blocks from Supabase
   let services: Service[] = [];
+  const contentBlocks: Record<string, string> = {};
   try {
-    const { data } = await supabase
-      .from("services")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order");
-    if (data) services = data as Service[];
+    const [servicesRes, blocksRes] = await Promise.all([
+      supabase.from("services").select("*").eq("is_active", true).order("display_order"),
+      supabase.from("content_blocks").select("section_key, content")
+    ]);
+    if (servicesRes.data) services = servicesRes.data as Service[];
+    if (blocksRes.data) {
+      blocksRes.data.forEach(block => {
+        if (block.section_key && block.content) {
+          contentBlocks[block.section_key] = block.content;
+        }
+      });
+    }
   } catch (error) {
-    console.error("Error fetching services:", error);
+    console.error("Error fetching data:", error);
   }
 
 
@@ -76,6 +83,9 @@ export default async function ServicesPage() {
 
   const displayServices = services.length > 0 ? services : fallbackServices;
 
+  const pageHeading = contentBlocks.services_page_heading || "Our Services";
+  const pageText = contentBlocks.services_page_text || "We don't just build websites; we build scalable digital growth engines. Our core disciplines work in harmony to take your brand from concept to market leader.";
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -87,9 +97,9 @@ export default async function ServicesPage() {
           Back to Home
         </Link>
         
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">Our Services</h1>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">{pageHeading}</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mb-16">
-          We don't just build websites; we build scalable digital growth engines. Our core disciplines work in harmony to take your brand from concept to market leader.
+          {pageText}
         </p>
 
         <div className="grid md:grid-cols-2 gap-8">

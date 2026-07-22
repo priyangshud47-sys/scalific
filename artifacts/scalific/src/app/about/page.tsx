@@ -14,17 +14,24 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  // Fetch active team members from Supabase
+  // Fetch active team members and content blocks from Supabase
   let teamMembers: TeamMember[] = [];
+  const contentBlocks: Record<string, string> = {};
   try {
-    const { data } = await supabase
-      .from("team_members")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order");
-    if (data) teamMembers = data as TeamMember[];
+    const [teamRes, blocksRes] = await Promise.all([
+      supabase.from("team_members").select("*").eq("is_active", true).order("display_order"),
+      supabase.from("content_blocks").select("section_key, content")
+    ]);
+    if (teamRes.data) teamMembers = teamRes.data as TeamMember[];
+    if (blocksRes.data) {
+      blocksRes.data.forEach(block => {
+        if (block.section_key && block.content) {
+          contentBlocks[block.section_key] = block.content;
+        }
+      });
+    }
   } catch (error) {
-    console.error("Error fetching team members:", error);
+    console.error("Error fetching data:", error);
   }
 
   // Fallback if database has no active team members
@@ -42,6 +49,11 @@ export default async function AboutPage() {
 
   const displayMembers = teamMembers.length > 0 ? teamMembers : fallbackMembers;
 
+  const pageHeading = contentBlocks.about_page_heading || "Built by founders, for founders.";
+  const pageText = contentBlocks.about_page_text || "Scalific started from a simple frustration: agencies that hand off strategy, design, web, and marketing to four different teams who never talk to each other.";
+  const integratedHeading = contentBlocks.about_integrated_heading || "The Integrated Approach";
+  const integratedText = contentBlocks.about_integrated_text || "Every plan we write, site we build, and campaign we run stays connected from the first workshop to the first major growth curve. We act as your fractional growth team, ensuring that your brand narrative remains consistent across every single touchpoint.";
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -50,17 +62,17 @@ export default async function AboutPage() {
           Back to Home
         </Link>
         
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">Built by founders, for founders.</h1>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8">{pageHeading}</h1>
         
         <div className="prose prose-lg max-w-none text-muted-foreground">
           <p className="text-xl mb-8">
-            Scalific started from a simple frustration: agencies that hand off strategy, design, web, and marketing to four different teams who never talk to each other.
+            {pageText}
           </p>
           
           <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 my-12 text-foreground">
-            <h3 className="text-2xl font-bold mb-4">The Integrated Approach</h3>
+            <h3 className="text-2xl font-bold mb-4">{integratedHeading}</h3>
             <p className="text-muted-foreground">
-              Every plan we write, site we build, and campaign we run stays connected from the first workshop to the first major growth curve. We act as your fractional growth team, ensuring that your brand narrative remains consistent across every single touchpoint.
+              {integratedText}
             </p>
           </div>
         </div>
