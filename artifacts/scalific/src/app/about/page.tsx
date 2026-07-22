@@ -1,13 +1,47 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import type { TeamMember } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export const metadata: Metadata = {
   title: "About Us — Scalific Founder-Led Agency",
   description: "Scalific is a founder-led digital agency. We combine strategy, design, and marketing under one roof to build scalable brands.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // Fetch active team members from Supabase
+  let teamMembers: TeamMember[] = [];
+  try {
+    const { data } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order");
+    if (data) teamMembers = data as TeamMember[];
+  } catch (error) {
+    console.error("Error fetching team members:", error);
+  }
+
+  // Fallback if database has no active team members
+  const fallbackMembers = [
+    {
+      id: "fallback-founder",
+      name: "Priyangshu Das",
+      role: "Founder & Strategy Lead",
+      photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=400&auto=format&fit=crop",
+      bio: "Scalific started from a simple frustration...",
+      is_active: true,
+      display_order: 1
+    }
+  ];
+
+  const displayMembers = teamMembers.length > 0 ? teamMembers : fallbackMembers;
+
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans pt-32 pb-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -31,14 +65,24 @@ export default function AboutPage() {
           </div>
 
           <h2 className="text-3xl font-bold text-foreground mt-12 mb-6">Meet the Team</h2>
-          <div className="flex items-center gap-6 mb-12">
-            <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
-              <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=400&auto=format&fit=crop" alt="Founder" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-foreground">Priyangshu Das</h3>
-              <p className="text-primary font-medium">Founder & Strategy Lead</p>
-            </div>
+          <div className="grid sm:grid-cols-2 gap-6 mb-12">
+            {displayMembers.map((member) => (
+              <div key={member.id} className="flex items-center gap-6 p-4 rounded-xl border border-gray-100 bg-white shadow-sm text-foreground">
+                <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden border border-gray-200 shrink-0">
+                  {member.photo_url ? (
+                    <img src={member.photo_url} alt={member.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-xl font-bold text-gray-400">
+                      {member.name.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{member.name}</h3>
+                  <p className="text-primary font-medium text-sm">{member.role}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
