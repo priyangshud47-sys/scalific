@@ -282,9 +282,7 @@
   section,
   nav,
   header,
-  footer,
-  img,
-  svg {
+  footer {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     -webkit-perspective: 1000px;
